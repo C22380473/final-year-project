@@ -17,7 +17,7 @@
 - Clarify project scope and technical requirements.  
 
 
-## Week 4 (06/10/2025 to 12/10/2025)
+## Week 4 (06/10/2025 - 12/10/2025)
 
 **Work Completed:**
 - Finalised proposal draft, including Deliverables, Project Schedule and Conclusion sections.  
