@@ -1,6 +1,6 @@
 # Weekly Logs
 
-## Week 3 (29/09/2025 - 05/10/2025)
+## Week 3 
 
 **Work Completed:**
 - Finalised the final year project idea and confirmed the project direction.  
@@ -17,7 +17,7 @@
 - Clarify project scope and technical requirements.  
 
 
-## Week 4 (06/10/2025 - 12/10/2025)
+## Week 4 
 
 **Work Completed:**
 - Finalised proposal draft, including Deliverables, Project Schedule and Conclusion sections.  
@@ -32,3 +32,20 @@
 - Submit the final proposal.  
 - Begin wireframe sketches and system diagrams.  
 - Plan research tasks for the requirements gathering phase.
+
+## Week 5 
+
+**Work Completed:**
+ 
+- Began the feasibility study for the project, analysing the technical, operational, and resource aspects.
+- Met with my supervisor to discuss the completed project proposal draft.
+- Talked through user requirements, project scope, and complexity and established a plan to meet weekly for progress updates.
+- Created an initial set of functional and non-functional requirements to define system expectations and constraints.
+
+**Meetings / Discussions:**
+- Meeting with supervisor to review project progress, feasibility and requirements.
+
+**Plans for Next Week:**
+- Continue developing the feasibility study, focusing on refining requirements and validating assumptions.
+- Begin working on use cases and system analysis to outline interactions and system behaviour.
+- Start drafting initial design diagrams if time allows.
