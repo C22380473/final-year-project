@@ -102,3 +102,37 @@
 - Clarify remaining requirements and refine Section 3 for completeness.
 - Begin drafting use cases and developing the UML system diagram to represent system structure and interactions.
 - Start Section 4, focusing on system design elements and implementation planning.
+
+
+## Week 8
+**Work Completed:**
+- Concentrated on the Gamification and Metronome components of the system, expanding their descriptions and functionalities within Section 2 of the report.
+- Finalised Section 2, ensuring all key features and literature connections were clearly articulated.
+- Completed Section 3, incorporating ethnographic insights and developing use cases to represent user interactions and system behaviour.
+- Met with the supervisor to discuss progress and received feedback on refining the literature review section, with an emphasis on integrating additional relevant sources.
+
+**Meetings/Discussions:**
+- Supervisor Meeting: Reviewed updates to Sections 2 and 3. Discussed enhancing the literature review and ensuring the narrative flow between theory and system design remains consistent.
+
+**Plans for Next Week:**
+- Meet with the supervisor for a follow-up discussion on section revisions.
+- Begin working on the remaining sections of the report, focusing on system design, testing and prototyping
+- 
+Integrate supervisor feedback into the literature review and ensure all sections maintain alignment with the project objectives.
+
+## Week 9
+**Work Completed**
+- Finalised all use cases, ensuring they accurately represent user interactions and system functionality.
+- Completed Section 4 (System Design), detailing software methodologies and providing an overview of the system architecture.
+- Created and included class diagrams, sequence diagrams for core functions, an architecture diagram, and a database ERD, along with detailed wireframe explanations.
+- Completed Section 5 (Testing and Evaluation), outlining testing strategies and evaluation methods.
+
+
+**Meetings/Discussions**
+- Supervisor Meeting: Reviewed progress on gamified learning and the newly completed sections. Discussed the remaining tasks for Sections 4–6, including finalising system design, testing, and prototype development. Agreed on a date to submit the report for review before the final due date next week.
+
+
+**Plans for Next Week**
+- Submit the full report for supervisor review.
+- Revise and correct any issues or feedback identified during the review process.
+- Continue developing the prototype and seek supervisor guidance on implementation and improvements.
