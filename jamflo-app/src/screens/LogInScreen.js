@@ -1,12 +1,29 @@
 import React, { useState } from 'react';
-import { Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { GradientContainer } from '../components/GradientContainer';
 import { IntroHeader } from '../components/IntroHeader';
 import { AuthInput } from '../components/AuthInput';
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../config/firebaseConfig";
 
-export default function LogInScreen() {
+export default function LogInScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Missing Fields", "Enter your email and password.");
+      return;
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+
+      navigation.replace("Home"); // replace so user can't go back
+    } catch (err) {
+      Alert.alert("Login Error", err.message);
+    }
+  };
 
   return (
     <GradientContainer>
@@ -33,9 +50,19 @@ export default function LogInScreen() {
         secureTextEntry
       />
 
-      <TouchableOpacity style={styles.logInBtn}>
+      <TouchableOpacity style={styles.logInBtn}  onPress={handleLogin}>
         <Text style={styles.logInBtnText}>Log In</Text>
       </TouchableOpacity>
+
+       <TouchableOpacity 
+        onPress={() => navigation.navigate("SignUp")}
+        style={{ marginTop: 20 }}
+      >
+        <Text style={{ color: "#fff", textAlign: "center" }}>
+          Don't have an account? Sign Up
+        </Text>
+      </TouchableOpacity>
+      
     </GradientContainer>
   );
 }
