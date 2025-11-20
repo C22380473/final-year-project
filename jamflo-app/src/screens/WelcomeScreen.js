@@ -1,71 +1,73 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React from "react";
+import { View, Text, StyleSheet, Image } from "react-native";
+import { GradientContainer } from "../components/GradientContainer";
+import { PrimaryButton } from "../components/PrimaryButton";
 
 export default function WelcomeScreen({ navigation }) {
   return (
-    <LinearGradient  colors={['#218ED5', '#13B4B0']} style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Image 
-          source={require('../../assets/logo.png')}
-          style={styles.logoImage}
+    <GradientContainer scrollable={false}>
+      <View style={styles.content}>
+        <Text style={styles.title}>Hello,{"\n"}Welcome to</Text>
+        <Image
+          source={require("../../assets/logo.png")}
+          style={styles.logo}
         />
-        <Text style={styles.logoText}>JamFlo</Text>
-        <Text style={styles.tagline}>Structure Your Practice. Play Your Way.</Text>
-      </View>
-      
-      <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.navigate('LogIn')}>
-        <Text style={styles.primaryBtnText}>Log In</Text>
-      </TouchableOpacity>
 
-      <TouchableOpacity style={styles.secondaryBtn} onPress={() => navigation.navigate('SignUp')}>
-        <Text style={styles.secondaryBtnText}>Sign Up</Text>
-      </TouchableOpacity>
-    </LinearGradient>
+        <Text style={styles.appName}>JamFlo</Text>
+        <Text style={styles.tagline}>Your Practice. Your Flow.</Text>
+
+        <Text style={styles.subtitle}>
+          Build better guitar practice habits and share routines with other players.
+        </Text>
+
+        <PrimaryButton
+          title="Continue"
+          onPress={() => navigation.navigate("AppInfo1")}
+          style={{ paddingHorizontal: 80 }}
+        />
+      </View>
+    </GradientContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-
-  logoContainer: { alignItems: 'center', marginBottom: 80 },
-
-  logoImage: {
-  width: 220,    
-  height: 220,
-  resizeMode: 'contain',
-  marginBottom: -50,
-},
-
-
-  logoText: { fontSize: 60, fontWeight: '700', color: '#fff' },
-
-  tagline: { color: '#fff', marginTop: 8, fontSize: 16 },
-
-  primaryBtn: {
-    width: '75%',
-    paddingVertical: 18,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    marginBottom: 20,
-    alignItems: 'center',
-    elevation: 3,
+  content: {
+    flex: 1,
+    paddingHorizontal: 40,
+    justifyContent: "center",
+    alignItems: "center",
   },
-
-  primaryBtnText: { fontWeight: '600', fontSize: 16 },
-
-  secondaryBtn: {
-    width: '75%',
-    paddingVertical: 18,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#fff',
-    alignItems: 'center',
+  title: {
+    fontSize: 32,
+    color: "#fff",
+    fontWeight: "600",
+    textAlign: "left",
+    alignSelf: "flex-start",
+    marginBottom: 8,
   },
-
-  secondaryBtnText: {
-    color: '#fff',
-    fontWeight: '600',
+  logo: {
+    width: 180,
+    height: 180,
+    resizeMode: "contain",
+  },
+  appName: {
+    fontSize: 48,
+    color: "#fff",
+    fontWeight: "700",
+    marginTop: -40,
+  },
+  tagline: {
+    fontSize: 17,
+    color: "#fff",
+    fontWeight: "400",
+    marginBottom: 40,
+  },
+  subtitle: {
     fontSize: 16,
+    color: "#fff",
+    textAlign: "center",
+    lineHeight: 24,
+    fontStyle: "italic",
+    marginBottom: 50,
   },
 });

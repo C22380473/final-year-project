@@ -76,7 +76,7 @@ export default function SignUpScreen({ navigation }) {
         [
           {
             text: "OK",
-            onPress: () => navigation.navigate("LogIn")
+            onPress: () => navigation.navigate("Welcome")
           }
         ]
       );
