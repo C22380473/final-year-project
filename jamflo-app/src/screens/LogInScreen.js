@@ -19,7 +19,6 @@ export default function LogInScreen({ navigation }) {
     try {
       await signInWithEmailAndPassword(auth, email, password);
 
-      navigation.replace("Home"); // replace so user can't go back
     } catch (err) {
       Alert.alert("Login Error", err.message);
     }

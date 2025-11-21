@@ -1,8 +1,7 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { GradientContainer } from "../components/GradientContainer";
-import { AppHeader } from "../components/AppHeader";
 import { InfoCard, InfoItem } from "../components/InfoCard";
+import { InfoHeader } from "../components/InfoHeader";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ScreenTitle } from "../components/ScreenTitle";
 
@@ -10,7 +9,7 @@ export default function AppInfoScreen1({ navigation }) {
   return (
     <GradientContainer scrollable={false}>
       <View style={styles.content}>
-        <AppHeader style={{ marginBottom: 60 }} />
+        <InfoHeader style={{ marginBottom: 60 }} />
 
         <ScreenTitle>How does{"\n"}JamFlo work?</ScreenTitle>
 

@@ -1,17 +1,16 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { GradientContainer } from "../components/GradientContainer";
-import { AppHeader } from "../components/AppHeader";
-import { ScreenTitle } from "../components/ScreenTitle";
+import { InfoHeader } from "../components/InfoHeader";
 import { OptionCard } from "../components/OptionCard";
+import { ScreenTitle } from "../components/ScreenTitle";
 
 export default function StartingPointScreen({ navigation }) {
   return (
     <GradientContainer scrollable={false}>
       <View style={styles.content}>
-        <AppHeader style={{ marginBottom: 50 }} />
+        <InfoHeader style={{ marginBottom: 50 }} />
 
-        <ScreenTitle>How would you like  {"\n"} to start?</ScreenTitle>
+        <ScreenTitle>How would you like {"\n"} to start?</ScreenTitle>
 
         <Text style={styles.subtitle}>Choose your Starting Point:</Text>
 

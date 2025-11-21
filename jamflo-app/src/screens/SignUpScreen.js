@@ -1,11 +1,10 @@
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AuthInput } from '../components/AuthInput';
 import { GradientContainer } from '../components/GradientContainer';
 import { IntroHeader } from '../components/IntroHeader';
 import { auth } from "../config/firebaseConfig";
-
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 export default function SignUpScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -14,8 +13,7 @@ export default function SignUpScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordStrength, setPasswordStrength] = useState('');
   const [passwordRequirements, setPasswordRequirements] = useState([]);
-  const [formMessage, setFormMessage] = useState(null); // <-- INLINE MESSAGE
-
+  const [formMessage, setFormMessage] = useState(null);
 
   // Password strength evaluation + requirement checklist
   const evaluateStrength = (pass) => {
@@ -48,7 +46,7 @@ export default function SignUpScreen({ navigation }) {
     setPasswordRequirements(requirements);
   };
 
- const handleSignUp = async () => {
+  const handleSignUp = async () => {
     setFormMessage(null); // Reset message
 
     if (!username || !email || !password || !confirmPassword) {
@@ -70,34 +68,25 @@ export default function SignUpScreen({ navigation }) {
       const res = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(res.user, { displayName: username });
 
-      Alert.alert(
-        "Success",
-        "Your account has been created!",
-        [
-          {
-            text: "OK",
-            onPress: () => navigation.navigate("Welcome")
-          }
-        ]
-      );
+      // User is now automatically logged in by Firebase
+      // Navigate to onboarding (Welcome screen)
+      navigation.navigate("Welcome");
 
     } catch (err) {
       setFormMessage({ type: "error", text: err.message });
     }
   };
 
-
-
   return (
     <GradientContainer>
-        <IntroHeader />
+      <IntroHeader />
 
-        <Text style={styles.title}>Create an Account</Text>
-        <Text style={styles.subtitle}>
-          to get started on your guitar practice journey
-        </Text>
+      <Text style={styles.title}>Create an Account</Text>
+      <Text style={styles.subtitle}>
+        to get started on your guitar practice journey
+      </Text>
 
-        <AuthInput 
+      <AuthInput 
         label="Username"
         value={username}
         onChangeText={text => setUsername(text)}
@@ -112,10 +101,10 @@ export default function SignUpScreen({ navigation }) {
         keyboardType="email-address"
       />
 
-       <AuthInput 
+      <AuthInput 
         label="Password"
         value={password}
-         onChangeText={(pwd) => {
+        onChangeText={(pwd) => {
           setPassword(pwd);
           evaluateStrength(pwd);
         }}
@@ -123,7 +112,7 @@ export default function SignUpScreen({ navigation }) {
         secureTextEntry
       />
 
-       {/* Password Strength Indicator */}
+      {/* Password Strength Indicator */}
       {passwordStrength !== "" && (
         <Text style={{
           color:
@@ -177,6 +166,14 @@ export default function SignUpScreen({ navigation }) {
         </Text>
       )}
 
+      <TouchableOpacity 
+        onPress={() => navigation.navigate("LogIn")}
+        style={{ marginTop: 20 }}
+      >
+        <Text style={{ color: "#fff", textAlign: "center" }}>
+          Already have an account? Log In
+        </Text>
+      </TouchableOpacity>
     </GradientContainer>
   );
 }
