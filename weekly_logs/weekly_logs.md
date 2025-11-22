@@ -121,18 +121,38 @@
 Integrate supervisor feedback into the literature review and ensure all sections maintain alignment with the project objectives.
 
 ## Week 9
-**Work Completed**
+**Work Completed:**
 - Finalised all use cases, ensuring they accurately represent user interactions and system functionality.
 - Completed Section 4 (System Design), detailing software methodologies and providing an overview of the system architecture.
 - Created and included class diagrams, sequence diagrams for core functions, an architecture diagram, and a database ERD, along with detailed wireframe explanations.
 - Completed Section 5 (Testing and Evaluation), outlining testing strategies and evaluation methods.
 
 
-**Meetings/Discussions**
+**Meetings/Discussions:**
 - Supervisor Meeting: Reviewed progress on gamified learning and the newly completed sections. Discussed the remaining tasks for Sections 4–6, including finalising system design, testing, and prototype development. Agreed on a date to submit the report for review before the final due date next week.
 
 
-**Plans for Next Week**
+**Plans for Next Week:**
 - Submit the full report for supervisor review.
 - Revise and correct any issues or feedback identified during the review process.
 - Continue developing the prototype and seek supervisor guidance on implementation and improvements.
+
+## Week 10
+
+**Work Completed:**
+- Completed Section 6 and Section 7 of the interim report and finalised the full document for submission.
+- Began developing the prototype, focusing on establishing the core structure and foundational features.
+- Implemented the onboarding flow and user authentication as part of the initial prototype setup.
+- Created the project plan and Gantt chart for Section 7 to outline the development timeline and key milestones.
+- Considered and documented project risks and future work, ensuring a clear roadmap for continued development after the interim submission.
+
+**Meetings/Discussions:**
+
+Supervisor Meeting:
+- Reviewed progress on Sections 2–5 and discussed expectations for the initial prototype required to complete Sections 6 and 7 of the report.
+- Submitted the interim report for supervisor review on Monday and incorporated feedback during Tuesday and the remainder of the week.
+- Received a second set of comments later in the week and finalised all edits and polish between Friday and Saturday before submission.
+
+**Plans for Next Week:**
+- Continue developing the prototype, focusing on creating routine based features and basic core functionality.
+- Prepare the interim presentation slides.
