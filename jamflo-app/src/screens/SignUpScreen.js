@@ -68,11 +68,21 @@ export default function SignUpScreen({ navigation }) {
       const res = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(res.user, { displayName: username });
 
-      // User is now automatically logged in by Firebase
+      // Reload ensures displayName updates immediately
+      await res.user.reload();
+      await auth.currentUser.reload();
+
       // Navigate to onboarding (Welcome screen)
-      navigation.navigate("Welcome");
+      navigation.navigate("Welcome", { fromSignUp: true });
 
     } catch (err) {
+      if (err.code === "auth/email-already-in-use") {
+        setFormMessage({
+          type: "error",
+          text: "This email is already registered. Please log in instead."
+        });
+        return;
+      }
       setFormMessage({ type: "error", text: err.message });
     }
   };

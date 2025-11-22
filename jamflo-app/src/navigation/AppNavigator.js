@@ -17,10 +17,15 @@ const Stack = createStackNavigator();
 export default function AppNavigator() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [firstLogin, setFirstLogin] = useState(false);
 
-  // Listen for user state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        const isFirstLogin =
+          currentUser.metadata.creationTime === currentUser.metadata.lastSignInTime;
+        setFirstLogin(isFirstLogin);
+      }
       setUser(currentUser);
       setLoading(false);
     });
@@ -28,30 +33,35 @@ export default function AppNavigator() {
     return unsubscribe;
   }, []);
 
-  if (loading) return null; // You can show a splash screen here
+  if (loading) return null; // show splash screen later
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
-          // If logged in -> go directly to Home 
-          <>
-            <Stack.Screen name="Home" component={HomeScreen} />
-          </>
-        ) : (
-          // If logged out -> show login/signup flow
+
+        {!user ? (
+          //  USER NOT LOGGED IN -> SHOW AUTH SCREENS
           <>
             <Stack.Screen name="Main" component={MainScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
             <Stack.Screen name="LogIn" component={LogInScreen} />
-            
-            {/* Onboarding only accessible after signup */}
+          </>
+        ) : firstLogin ? (
+          // FIRST LOGIN AFTER SIGNUP -> ONBOARDING FLOW
+          <>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="AppInfo1" component={AppInfoScreen1} />
             <Stack.Screen name="AppInfo2" component={AppInfoScreen2} />
             <Stack.Screen name="StartingPoint" component={StartingPointScreen} />
+            <Stack.Screen name="Home" component={HomeScreen} />
+          </>
+        ) : (
+          // RETURNING USER OR NORMAL LOGIN -> GO HOME
+          <>
+            <Stack.Screen name="Home" component={HomeScreen} />
           </>
         )}
+
       </Stack.Navigator>
     </NavigationContainer>
   );

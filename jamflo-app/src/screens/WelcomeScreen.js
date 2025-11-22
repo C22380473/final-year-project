@@ -1,9 +1,17 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 import { GradientContainer } from "../components/GradientContainer";
 import { PrimaryButton } from "../components/PrimaryButton";
 
-export default function WelcomeScreen({ navigation }) {
+export default function WelcomeScreen({ navigation, route }) {
+  
+  // Prevent showing onboarding if user didn't come from signup
+  useEffect(() => {
+    if (!route.params?.fromSignUp) {
+      navigation.replace("Home");
+    }
+  }, []);
+
   return (
     <GradientContainer scrollable={false}>
       <View style={styles.content}>
