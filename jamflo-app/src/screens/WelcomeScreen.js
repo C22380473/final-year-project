@@ -5,13 +5,6 @@ import { PrimaryButton } from "../components/PrimaryButton";
 
 export default function WelcomeScreen({ navigation, route }) {
   
-  // Prevent showing onboarding if user didn't come from signup
-  useEffect(() => {
-    if (!route.params?.fromSignUp) {
-      navigation.replace("Home");
-    }
-  }, []);
-
   return (
     <GradientContainer scrollable={false}>
       <View style={styles.content}>

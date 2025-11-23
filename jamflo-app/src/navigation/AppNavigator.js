@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MainScreen from '../screens/MainScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import LogInScreen from '../screens/LogInScreen';
@@ -17,15 +18,28 @@ const Stack = createStackNavigator();
 export default function AppNavigator() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [firstLogin, setFirstLogin] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+
+  const checkOnboardingStatus = async (userId) => {
+    try {
+      const onboardingKey = `onboarding_completed_${userId}`;
+      const completed = await AsyncStorage.getItem(onboardingKey);
+      return completed === 'true';
+    } catch (error) {
+      console.error('Error reading onboarding status:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        const isFirstLogin =
-          currentUser.metadata.creationTime === currentUser.metadata.lastSignInTime;
-        setFirstLogin(isFirstLogin);
+        const completed = await checkOnboardingStatus(currentUser.uid);
+        setHasCompletedOnboarding(completed);
+      } else {
+        setHasCompletedOnboarding(false);
       }
+      
       setUser(currentUser);
       setLoading(false);
     });
@@ -33,7 +47,7 @@ export default function AppNavigator() {
     return unsubscribe;
   }, []);
 
-  if (loading) return null; // show splash screen later
+  if (loading) return null;
 
   return (
     <NavigationContainer>
@@ -46,17 +60,25 @@ export default function AppNavigator() {
             <Stack.Screen name="SignUp" component={SignUpScreen} />
             <Stack.Screen name="LogIn" component={LogInScreen} />
           </>
-        ) : firstLogin ? (
-          // FIRST LOGIN AFTER SIGNUP -> ONBOARDING FLOW
+        ) : !hasCompletedOnboarding ? (
+          // USER LOGGED IN BUT HASN'T COMPLETED ONBOARDING
           <>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="AppInfo1" component={AppInfoScreen1} />
             <Stack.Screen name="AppInfo2" component={AppInfoScreen2} />
-            <Stack.Screen name="StartingPoint" component={StartingPointScreen} />
+            <Stack.Screen 
+              name="StartingPoint" 
+              children={(props) => (
+                <StartingPointScreen 
+                  {...props} 
+                  onOnboardingComplete={() => setHasCompletedOnboarding(true)}
+                />
+              )}
+            />
             <Stack.Screen name="Home" component={HomeScreen} />
           </>
         ) : (
-          // RETURNING USER OR NORMAL LOGIN -> GO HOME
+          // RETURNING USER WHO HAS COMPLETED ONBOARDING
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
           </>

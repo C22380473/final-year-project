@@ -1,10 +1,50 @@
 import { StyleSheet, Text, View } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GradientContainer } from "../components/GradientContainer";
 import { InfoHeader } from "../components/InfoHeader";
 import { OptionCard } from "../components/OptionCard";
 import { ScreenTitle } from "../components/ScreenTitle";
+import { auth } from "../config/firebaseConfig";
 
-export default function StartingPointScreen({ navigation }) {
+export default function StartingPointScreen({ navigation, onOnboardingComplete }) {
+  
+  const completeOnboarding = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const onboardingKey = `onboarding_completed_${user.uid}`;
+        await AsyncStorage.setItem(onboardingKey, 'true');
+        console.log('Onboarding marked as complete for:', user.email);
+        
+        // Notify parent component that onboarding is complete
+        if (onOnboardingComplete) {
+          onOnboardingComplete();
+        }
+      }
+    } catch (error) {
+      console.error('Error saving onboarding status:', error);
+    }
+  };
+
+  const handleQuickStart = async () => {
+    await completeOnboarding();
+    navigation.navigate("Home");
+  };
+
+  const handleCreateOwn = async () => {
+    await completeOnboarding();
+    // Navigate to CreateOwn screen when it's created
+    // For now, going to Home
+    navigation.navigate("Home");
+  };
+
+  const handleBrowseTemplates = async () => {
+    await completeOnboarding();
+    // Navigate to BrowseTemplates screen when it's created
+    // For now, going to Home
+    navigation.navigate("Home");
+  };
+
   return (
     <GradientContainer scrollable={false}>
       <View style={styles.content}>
@@ -19,21 +59,21 @@ export default function StartingPointScreen({ navigation }) {
             emoji="🚀"
             title="Quick Start"
             description={`Build a routine using pre-made Focus Blocks\n(recommended for beginners).`}
-            onPress={() => navigation.navigate("QuickStart")}
+            onPress={handleQuickStart}
           />
 
           <OptionCard
             emoji="🎨"
             title="Create My Own"
             description="Design your own Focus Blocks and combine them into a custom routine."
-            onPress={() => navigation.navigate("CreateOwn")}
+            onPress={handleCreateOwn}
           />
 
           <OptionCard
             emoji="🔍"
             title="Browse Templates"
             description="Explore Focus Blocks/Routines shared by other users."
-            onPress={() => navigation.navigate("BrowseTemplates")}
+            onPress={handleBrowseTemplates}
           />
         </View>
       </View>

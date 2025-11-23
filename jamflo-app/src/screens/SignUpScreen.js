@@ -72,9 +72,9 @@ export default function SignUpScreen({ navigation }) {
       await res.user.reload();
       await auth.currentUser.reload();
 
-      // Navigate to onboarding (Welcome screen)
-      navigation.navigate("Welcome", { fromSignUp: true });
-
+      // AppNavigator will automatically show onboarding screens
+      // because hasCompletedOnboarding will be false for new users
+      
     } catch (err) {
       if (err.code === "auth/email-already-in-use") {
         setFormMessage({
