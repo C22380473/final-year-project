@@ -47,8 +47,8 @@ export default function RoutineEditorScreen({ navigation }) {
   };
 
   /** Edit focus block */
-  const handleEditFocusBlock = (blockId) => {
-    loadFocusBlock(blockId);
+  const handleEditFocusBlock = (block) => {
+    loadFocusBlock(block);
     navigation.navigate("AddFocusBlock", { isEditing: true, blockId: block.blockId });
   };
 
@@ -80,7 +80,7 @@ export default function RoutineEditorScreen({ navigation }) {
         totalDuration: calculateTotalDuration(),
       };
 
-      const result = currentRoutine.id
+      const result = currentRoutine.routineId
         ? await updateRoutine(currentRoutine.routineId, routineData)
         : await createRoutine(user.uid, routineData);
 
@@ -203,7 +203,7 @@ export default function RoutineEditorScreen({ navigation }) {
               total={currentRoutine.focusBlocks.length}
               onMoveUp={() => reorderFocusBlocks(index, index - 1)}
               onMoveDown={() => reorderFocusBlocks(index, index + 1)}
-              onEdit={() => handleEditFocusBlock(blockId)}
+              onEdit={() => handleEditFocusBlock(block)}
               onRemove={() => handleRemoveFocusBlock(block.blockId)}
             />
           ))

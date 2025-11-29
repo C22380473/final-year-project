@@ -13,6 +13,8 @@ import { OutlineButton } from "../components/OutlineButton";
 
 export default function AddFocusBlockScreen({ navigation, route }) {
   const {
+    currentRoutine,       
+    loadFocusBlock,   
     currentFocusBlock,
     addFocusBlock,
     updateFocusBlock,
@@ -35,14 +37,20 @@ export default function AddFocusBlockScreen({ navigation, route }) {
 
   // Load data when editing or creating new
   useEffect(() => {
-    if (currentFocusBlock.name || currentFocusBlock.exercises.length > 0) {
-      setFocusName(currentFocusBlock.name);
-      setFocusDescription(currentFocusBlock.description);
-      setExercises(currentFocusBlock.exercises);
-    } else {
-      addNewExercise();
-    }
-  }, []);
+  if (isEditing && blockId) {
+    const block = currentRoutine.focusBlocks.find(b => b.blockId === blockId);
+    loadFocusBlock(block);
+
+    setFocusName(block.name);
+    setFocusDescription(block.description);
+    setExercises(block.exercises);
+  } else {
+    resetCurrentFocusBlock();
+    setFocusName("");
+    setFocusDescription("");
+    setExercises([]);
+  }
+}, [isEditing, blockId]);
 
   // Add a blank exercise
   const addNewExercise = () => {
