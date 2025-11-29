@@ -39,17 +39,17 @@ export default function RoutineEditorScreen({ navigation }) {
   }, [currentRoutine]);
 
   /** Remove focus block */
-  const handleRemoveFocusBlock = (id) => {
+  const handleRemoveFocusBlock = (blockId) => {
     Alert.alert("Remove Focus Block", "Remove this block?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: () => removeFocusBlock(id) },
+      { text: "Remove", style: "destructive", onPress: () => removeFocusBlock(blockId) },
     ]);
   };
 
   /** Edit focus block */
-  const handleEditFocusBlock = (block) => {
-    loadFocusBlock(block);
-    navigation.navigate("AddFocusBlock", { isEditing: true, blockId: block.id });
+  const handleEditFocusBlock = (blockId) => {
+    loadFocusBlock(blockId);
+    navigation.navigate("AddFocusBlock", { isEditing: true, blockId: block.blockId });
   };
 
   /** Save to Firestore */
@@ -81,7 +81,7 @@ export default function RoutineEditorScreen({ navigation }) {
       };
 
       const result = currentRoutine.id
-        ? await updateRoutine(currentRoutine.id, routineData)
+        ? await updateRoutine(currentRoutine.routineId, routineData)
         : await createRoutine(user.uid, routineData);
 
       setSaving(false);
@@ -197,14 +197,14 @@ export default function RoutineEditorScreen({ navigation }) {
           /* Focus Blocks List */
           currentRoutine.focusBlocks.map((block, index) => (
            <FocusBlockCard
-              key={block.id}
+              key={block.blockId}
               block={block}
               index={index}
               total={currentRoutine.focusBlocks.length}
               onMoveUp={() => reorderFocusBlocks(index, index - 1)}
               onMoveDown={() => reorderFocusBlocks(index, index + 1)}
-              onEdit={() => handleEditFocusBlock(block)}
-              onRemove={() => handleRemoveFocusBlock(block.id)}
+              onEdit={() => handleEditFocusBlock(blockId)}
+              onRemove={() => handleRemoveFocusBlock(block.blockId)}
             />
           ))
         )}

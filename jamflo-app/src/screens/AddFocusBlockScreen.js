@@ -47,7 +47,7 @@ export default function AddFocusBlockScreen({ navigation, route }) {
   // Add a blank exercise
   const addNewExercise = () => {
     const newExercise = {
-      id: `exercise_${Date.now()}`,
+      exerciseId: `exercise_${Date.now()}_${Math.floor(Math.random() * 99999)}`,
       name: "",
       duration: "",
       tempo: "",
@@ -59,7 +59,7 @@ export default function AddFocusBlockScreen({ navigation, route }) {
   };
 
   // Remove exercise
-  const handleRemoveExercise = (id) => {
+  const handleRemoveExercise = (exerciseId) => {
     if (exercises.length === 1) {
       Alert.alert("Cannot Remove", "A focus block must have at least one exercise.");
       return;
@@ -67,7 +67,7 @@ export default function AddFocusBlockScreen({ navigation, route }) {
 
     Alert.alert("Remove Exercise", "Are you sure?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: () => setExercises((prev) => prev.filter((e) => e.id !== id)) },
+      { text: "Remove", style: "destructive", onPress: () => setExercises((prev) => prev.filter((e) => e.exerciseId !== exerciseId)) },
     ]);
   };
 
@@ -89,7 +89,7 @@ export default function AddFocusBlockScreen({ navigation, route }) {
   // Update exercise field
   const updateExercise = (exerciseId, field, value) => {
     setExercises((prev) =>
-      prev.map((ex) => (ex.id === exerciseId ? { ...ex, [field]: value } : ex))
+      prev.map((ex) => (ex.exerciseId === exerciseId ? { ...ex, [field]: value } : ex))
     );
   };
 
@@ -116,13 +116,13 @@ export default function AddFocusBlockScreen({ navigation, route }) {
 
     setExercises((prev) =>
       prev.map((ex) =>
-        ex.id === selectedExerciseId
+        ex.exerciseId === selectedExerciseId
           ? {
               ...ex,
               resources: [
                 ...ex.resources,
                 {
-                  id: `resource_${Date.now()}`,
+                  resourceId: `resource_${Date.now()}_${Math.floor(Math.random() * 99999)}`,
                   type: resourceType,
                   url: resourceUrl,
                   addedAt: new Date().toISOString(),
@@ -153,7 +153,7 @@ export default function AddFocusBlockScreen({ navigation, route }) {
     }
 
     const focusBlock = {
-      id: blockId || currentFocusBlock.id || `block_${Date.now()}`,
+      blockId: blockId || currentFocusBlock.blockId || `block_${Date.now()}_${Math.floor(Math.random() * 99999)}`,
       name: focusName,
       description: focusDescription,
       exercises,
@@ -235,15 +235,15 @@ export default function AddFocusBlockScreen({ navigation, route }) {
         {/* Exercise Cards */}
         {exercises.map((exercise, index) => (
           <ExerciseCard
-            key={exercise.id}
+            key={exercise.exerciseId}
             exercise={exercise}
             index={index}
             total={exercises.length}
-            onChange={(field, value) => updateExercise(exercise.id, field, value)}
+            onChange={(field, value) => updateExercise(exercise.exerciseId, field, value)}
             onReorderUp={() => moveExerciseUp(index)}
             onReorderDown={() => moveExerciseDown(index)}
-            onRemove={() => handleRemoveExercise(exercise.id)}
-            onAddResource={() => openResourceModal(exercise.id)}
+            onRemove={() => handleRemoveExercise(exercise.exerciseId)}
+            onAddResource={() => openResourceModal(exercise.exerciseId)}
           />
         ))}
 

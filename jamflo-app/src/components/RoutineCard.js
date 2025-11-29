@@ -57,7 +57,7 @@ export const RoutineCard = ({
       <View style={styles.blocksList}>
         {routine.focusBlocks?.length > 0 ? (
           routine.focusBlocks.map((block) => (
-            <View key={block.id} style={styles.blockItem}>
+            <View key={block.blockId} style={styles.blockItem}>
               <Text style={styles.blockText}>{block.name}</Text>
             </View>
           ))

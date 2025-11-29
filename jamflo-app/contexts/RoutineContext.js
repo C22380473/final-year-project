@@ -5,7 +5,7 @@ const RoutineContext = createContext();
 export const RoutineProvider = ({ children }) => {
   // Main routine being created/edited
   const [currentRoutine, setCurrentRoutine] = useState({
-    id: null,
+    routineId: null,
     name: '',
     description: '',
     isPrivate: true,
@@ -14,7 +14,7 @@ export const RoutineProvider = ({ children }) => {
 
   // Current focus block being created/edited
   const [currentFocusBlock, setCurrentFocusBlock] = useState({
-    id: null,
+    blockId: null,
     name: '',
     description: '',
     exercises: []
@@ -24,7 +24,7 @@ export const RoutineProvider = ({ children }) => {
   const addFocusBlock = (block) => {
     const blockWithId = {
       ...block,
-      id: block.id || `block_${Date.now()}`
+      blockId: block.blockId || `block_${Date.now()}_${Math.floor(Math.random() * 99999)}`
     };
     
     setCurrentRoutine(prev => ({
@@ -40,7 +40,7 @@ export const RoutineProvider = ({ children }) => {
   const removeFocusBlock = (blockId) => {
     setCurrentRoutine(prev => ({
       ...prev,
-      focusBlocks: prev.focusBlocks.filter(b => b.id !== blockId)
+      focusBlocks: prev.focusBlocks.filter(b => b.blockId !== blockId)
     }));
   };
 
@@ -49,7 +49,7 @@ export const RoutineProvider = ({ children }) => {
     setCurrentRoutine(prev => ({
       ...prev,
       focusBlocks: prev.focusBlocks.map(b => 
-        b.id === blockId ? { ...b, ...updatedBlock } : b
+        b.blockId === blockId ? { ...b, ...updatedBlock } : b
       )
     }));
   };
@@ -58,7 +58,7 @@ export const RoutineProvider = ({ children }) => {
   const addExercise = (exercise) => {
     const exerciseWithId = {
       ...exercise,
-      id: exercise.id || `exercise_${Date.now()}`
+      exerciseId: exercise.exerciseId || `exercise_${Date.now()}_${Math.floor(Math.random() * 99999)}`
     };
     
     setCurrentFocusBlock(prev => ({
@@ -71,7 +71,7 @@ export const RoutineProvider = ({ children }) => {
   const removeExercise = (exerciseId) => {
     setCurrentFocusBlock(prev => ({
       ...prev,
-      exercises: prev.exercises.filter(e => e.id !== exerciseId)
+      exercises: prev.exercises.filter(e => e.exerciseId !== exerciseId)
     }));
   };
 
@@ -80,7 +80,7 @@ export const RoutineProvider = ({ children }) => {
     setCurrentFocusBlock(prev => ({
       ...prev,
       exercises: prev.exercises.map(e => 
-        e.id === exerciseId ? { ...e, ...updatedExercise } : e
+        e.exerciseId === exerciseId ? { ...e, ...updatedExercise } : e
       )
     }));
   };
@@ -116,12 +116,12 @@ export const RoutineProvider = ({ children }) => {
     setCurrentFocusBlock(prev => ({
       ...prev,
       exercises: prev.exercises.map(e => {
-        if (e.id === exerciseId) {
+        if (e.exerciseId === exerciseId) {
           return {
             ...e,
             resources: [...(e.resources || []), {
               ...resource,
-              id: `resource_${Date.now()}`
+              resourceId: `resource_${Date.now()}_${Math.floor(Math.random() * 99999)}`
             }]
           };
         }
@@ -135,10 +135,10 @@ export const RoutineProvider = ({ children }) => {
     setCurrentFocusBlock(prev => ({
       ...prev,
       exercises: prev.exercises.map(e => {
-        if (e.id === exerciseId) {
+        if (e.exerciseId === exerciseId) {
           return {
             ...e,
-            resources: (e.resources || []).filter(r => r.id !== resourceId)
+            resources: (e.resources || []).filter(r => r.resourceId !== resourceId)
           };
         }
         return e;
@@ -176,7 +176,7 @@ export const RoutineProvider = ({ children }) => {
   // Reset current focus block
   const resetCurrentFocusBlock = () => {
     setCurrentFocusBlock({
-      id: null,
+      blockId: null,
       name: '',
       description: '',
       exercises: []
@@ -186,7 +186,7 @@ export const RoutineProvider = ({ children }) => {
   // Reset entire routine
   const resetRoutine = () => {
     setCurrentRoutine({
-      id: null,
+      routineId: null,
       name: '',
       description: '',
       isPrivate: true,
