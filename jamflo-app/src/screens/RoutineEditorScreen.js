@@ -122,7 +122,7 @@ export default function RoutineEditorScreen({ navigation }) {
         navigation={navigation}
         breadcrumb={
           <>
-            Create a Routine › Add a Focus Block ›{" "}
+            Add a Focus Block ›{" "}
             <Text style={{ fontWeight: "700" }}>Routine Editor</Text>
           </>
         }

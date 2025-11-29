@@ -10,7 +10,7 @@ export const EmptyStateCard = ({ icon, message, buttonLabel, onPress }) => {
       <Text style={styles.text}>{message}</Text>
 
       {buttonLabel && (
-        <GradientButton title={buttonLabel} onPress={onPress} />
+        <GradientButton title={buttonLabel} onPress={onPress} style={{width: "100%"}} />
       )}
     </View>
   );
