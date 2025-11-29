@@ -7,13 +7,14 @@ export const GradientButton = ({
   onPress, 
   colors = ["#218ED5", "#13B4B0"],
   style,
-  textStyle 
+  textStyle,
+  gradientStyle 
 }) => {
   return (
     <TouchableOpacity onPress={onPress} style={style}>
       <LinearGradient
         colors={colors}
-        style={styles.gradientButton}
+        style={[styles.gradientButton, gradientStyle]}
       >
         <Text style={[styles.buttonText, textStyle]}>{title}</Text>
       </LinearGradient>

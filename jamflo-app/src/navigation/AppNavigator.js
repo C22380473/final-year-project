@@ -10,6 +10,10 @@ import WelcomeScreen from '../screens/WelcomeScreen';
 import AppInfoScreen1 from '../screens/AppInfoScreen1';
 import AppInfoScreen2 from '../screens/AppInfoScreen2';
 import StartingPointScreen from '../screens/StartingPointScreen';
+import CreateRoutineScreen from '../screens/CreateRoutineScreen';
+import AddFocusBlockScreen from '../screens/AddFocusBlockScreen';
+import RoutineEditorScreen from '../screens/RoutineEditorScreen';
+
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../config/firebaseConfig";
 
@@ -75,12 +79,18 @@ export default function AppNavigator() {
                 />
               )}
             />
+            <Stack.Screen name="CreateRoutine" component={CreateRoutineScreen} />
+            <Stack.Screen name="AddFocusBlock" component={AddFocusBlockScreen} />
+            <Stack.Screen name="RoutineEditor" component={RoutineEditorScreen} />
             <Stack.Screen name="Home" component={HomeScreen} />
           </>
         ) : (
           // RETURNING USER WHO HAS COMPLETED ONBOARDING
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="CreateRoutine" component={CreateRoutineScreen} />
+            <Stack.Screen name="AddFocusBlock" component={AddFocusBlockScreen} />
+            <Stack.Screen name="RoutineEditor" component={RoutineEditorScreen} />
           </>
         )}
 

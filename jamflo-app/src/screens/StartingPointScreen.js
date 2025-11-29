@@ -28,14 +28,14 @@ export default function StartingPointScreen({ navigation, onOnboardingComplete }
 
   const handleQuickStart = async () => {
     await completeOnboarding();
-    navigation.navigate("Home");
+    navigation.replace("CreateRoutine");
   };
 
   const handleCreateOwn = async () => {
     await completeOnboarding();
     // Navigate to CreateOwn screen when it's created
     // For now, going to Home
-    navigation.navigate("Home");
+    navigation.replace("CreateRoutine");
   };
 
   const handleBrowseTemplates = async () => {
