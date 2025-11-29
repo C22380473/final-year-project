@@ -184,7 +184,12 @@ export default function AddFocusBlockScreen({ navigation, route }) {
       >
         <BackBreadcrumbHeader
           navigation={navigation}
-          breadcrumb="Create a Routine › Add a Focus Block"
+          breadcrumb={
+            <>
+              Create a Routine ›{" "}
+              <Text style={{ fontWeight: "700" }}>Add a Focus Block</Text>
+            </>
+          }
         />
 
         <Text style={styles.title}>{isEditing ? "Edit Focus Block" : "Add a Focus Block"}</Text>

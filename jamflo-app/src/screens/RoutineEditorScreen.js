@@ -7,7 +7,6 @@ import { BottomNav } from "../components/BottomNav";
 import { GradientButton } from "../components/GradientButton";
 import { BackBreadcrumbHeader } from "../components/BackBreadcrumbHeader";
 import { Card } from "../components/Card";
-import { ReorderButtons } from "../components/ReorderButtons";
 import { OutlineButton } from "../components/OutlineButton";
 import { FocusBlockCard } from "../components/FocusBlockCard";
 import { VisibilityToggle } from "../components/VisibilityToggle";
@@ -120,20 +119,18 @@ export default function RoutineEditorScreen({ navigation }) {
         }}
       >
         <BackBreadcrumbHeader
-          navigation={navigation}
-          breadcrumb="Create a Routine › Add a Focus Block › Routine Editor"
-        />
+        navigation={navigation}
+        breadcrumb={
+          <>
+            Create a Routine › Add a Focus Block ›{" "}
+            <Text style={{ fontWeight: "700" }}>Routine Editor</Text>
+          </>
+        }
+/>
 
         {/* Title Row */}
         <View style={styles.titleRow}>
           <Text style={styles.title}>Routine Editor</Text>
-
-          <GradientButton
-            title={saving ? "Saving..." : "Save Routine"}
-            onPress={handleSaveRoutine}
-            disabled={saving}
-            gradientStyle={{ paddingHorizontal: 20, paddingVertical: 10 }}
-          />
         </View>
 
         {/* Routine Details Card */}
@@ -212,40 +209,12 @@ export default function RoutineEditorScreen({ navigation }) {
           ))
         )}
 
-        {/* Extra actions */}
-        {currentRoutine.focusBlocks.length > 0 && (
-          <>
-            <GradientButton
-              title="Schedule Routine"
-              onPress={() =>
-                Alert.alert("Coming Soon", "Scheduling will be available soon!")
-              }
-              style={{ marginTop: 24 }}
-            />
-
-            <OutlineButton
-              title="Clear All"
-              onPress={() => {
-                Alert.alert(
-                  "Clear Routine",
-                  "Are you sure you want to clear all changes?",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Clear",
-                      style: "destructive",
-                      onPress: () => {
-                        resetRoutine();
-                        navigation.navigate("Home");
-                      }
-                    }
-                  ]
-                );
-              }}
-              style={{ marginTop: 16 }}
-            />
-          </>
-        )}
+        <GradientButton
+        title={saving ? "Saving..." : "Save Routine"}
+        onPress={handleSaveRoutine}
+        disabled={saving}
+        gradientStyle={{ paddingVertical: 16 }}
+      />
       </ScrollView>
 
       {/* Saving Overlay */}
