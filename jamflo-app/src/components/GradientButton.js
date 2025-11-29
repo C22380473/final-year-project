@@ -24,8 +24,8 @@ export const GradientButton = ({
 
 const styles = StyleSheet.create({
   gradientButton: {
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 16,
+    borderRadius: 10,
     alignItems: "center",
   },
   buttonText: { 
