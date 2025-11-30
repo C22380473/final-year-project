@@ -7,13 +7,12 @@ import { BottomNav } from "../components/BottomNav";
 import { GradientButton } from "../components/GradientButton";
 import { BackBreadcrumbHeader } from "../components/BackBreadcrumbHeader";
 import { Card } from "../components/Card";
-import { OutlineButton } from "../components/OutlineButton";
 import { FocusBlockCard } from "../components/FocusBlockCard";
 import { VisibilityToggle } from "../components/VisibilityToggle";
 import { SavingOverlay } from "../components/SavingOverlay";
 
-import { useRoutine } from "../../contexts/RoutineContext";
-import { createRoutine, updateRoutine } from "../../services/routineService";
+import { useRoutine } from "../contexts/RoutineContext";
+import { createRoutine, updateRoutine } from "../services/routineService";
 import { auth } from "../config/firebaseConfig";
 
 export default function RoutineEditorScreen({ navigation }) {

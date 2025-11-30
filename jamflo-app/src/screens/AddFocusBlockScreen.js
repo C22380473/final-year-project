@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TextInput, Alert, StyleSheet } from "react-nati
 import { AppHeader } from "../components/AppHeader";
 import { BottomNav } from "../components/BottomNav";
 import { GradientButton } from "../components/GradientButton";
-import { useRoutine } from "../../contexts/RoutineContext";
+import { useRoutine } from "../contexts/RoutineContext";
 import { BackBreadcrumbHeader } from "../components/BackBreadcrumbHeader";
 import { Card } from "../components/Card";
 import { ExerciseCard } from "../components/ExerciseCard";

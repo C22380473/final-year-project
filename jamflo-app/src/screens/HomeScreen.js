@@ -10,8 +10,8 @@ import { RoutineCard } from "../components/RoutineCard";
 import { EmptyStateCard } from "../components/EmptyStateCard";
 import { LoadingCard } from "../components/LoadingCard";
 import { StatsRow } from "../components/StatsRow";
-import { useRoutine } from "../../contexts/RoutineContext";
-import { getUserRoutines, deleteRoutine } from "../../services/routineService";
+import { useRoutine } from "../contexts/RoutineContext";
+import { getUserRoutines, deleteRoutine } from "../services/routineService";
 import { auth } from "../config/firebaseConfig";
 
 
