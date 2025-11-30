@@ -156,3 +156,23 @@ Supervisor Meeting:
 **Plans for Next Week:**
 - Continue developing the prototype, focusing on creating routine based features and basic core functionality.
 - Prepare the interim presentation slides.
+
+## Week 11
+
+**Work Completed:**
+- Expanded the prototype by creating the core functionality for building a routine from scratch
+- Developed the interim demo presentation slides along with supporting documentation
+
+**Meetings/Discussions:**
+
+Supervisor Meeting:
+- Demonstrated the prototype created in Week 10, including the user login/sign-up and onboarding flow.
+- Discussed expectations and requirements for the upcoming interim demo and presentation slides.
+- Received clarification on which features should be prioritised ahead of the demo.
+
+**Plans for Next Week:**
+- Prepare for the interim demo and presentation.
+- Continue developing the prototype, focusing on practice-routine functionality if time allows after demo preparation.
+- Review any additional feedback provided after demo.
+
+
