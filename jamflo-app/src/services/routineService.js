@@ -1,5 +1,5 @@
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, getDocs, query, where, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { db } from '../src/config/firebaseConfig';
+import { db } from '../config/firebaseConfig';
 
 const ROUTINES_COLLECTION = 'routines';
 
