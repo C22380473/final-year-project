@@ -120,14 +120,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
-      <ScrollView
-        style={{ flex: 1 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {/* HEADER */}
+       {/* HEADER */}
         <AppHeader
           rightButton="logout"
           onRightButtonPress={async () => {
@@ -138,6 +131,13 @@ export default function HomeScreen({ navigation }) {
             }
           }}
         />
+      <ScrollView
+        style={{ flex: 1 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        showsVerticalScrollIndicator={false}
+      >
 
         {/* GREETING */}
         <View style={styles.greetingContainer}>
