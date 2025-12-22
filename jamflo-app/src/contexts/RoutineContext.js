@@ -1,265 +1,230 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useContext, useState } from "react";
 
 const RoutineContext = createContext();
+export const useRoutine = () => useContext(RoutineContext);
 
 export const RoutineProvider = ({ children }) => {
-  // Main routine being created/edited
+  /* -------------------- STATE -------------------- */
+
   const [currentRoutine, setCurrentRoutine] = useState({
     routineId: null,
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     isPrivate: true,
-    focusBlocks: []
+    focusBlocks: [],
   });
 
-  // Current focus block being created/edited
   const [currentFocusBlock, setCurrentFocusBlock] = useState({
     blockId: null,
-    name: '',
-    description: '',
-    exercises: []
+    name: "",
+    description: "",
+    exercises: [],
   });
 
-  // Add a focus block to the routine
-  const addFocusBlock = (block) => {
-    const blockWithId = {
-      ...block,
-      blockId: block.blockId || `block_${Date.now()}_${Math.floor(Math.random() * 99999)}`
+  /* -------------------- HELPERS -------------------- */
+
+  const generateId = (prefix) =>
+    `${prefix}_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+
+  /* -------------------- TEMPLATE CLONING -------------------- */
+
+  const cloneRoutineTemplate = (template) => {
+    return {
+      routineId: null,
+      name: template.name,
+      description: template.description,
+      isPrivate: template.isPrivate,
+      focusBlocks: template.focusBlocks.map((block) => ({
+        blockId: generateId("block"),
+        name: block.name,
+        description: block.description || "",
+        exercises: block.exercises.map((exercise) => ({
+          ...exercise,
+          exerciseId: generateId("exercise"),
+          resources: exercise.resources || [],
+        })),
+      })),
     };
-    
-    setCurrentRoutine(prev => ({
-      ...prev,
-      focusBlocks: [...prev.focusBlocks, blockWithId]
-    }));
-    
-    // Reset current focus block after adding
+  };
+
+  const loadRoutineTemplate = (template) => {
+    const cloned = cloneRoutineTemplate(template);
+    setCurrentRoutine(cloned);
     resetCurrentFocusBlock();
   };
 
-  // Remove a focus block from routine
-  const removeFocusBlock = (blockId) => {
-    setCurrentRoutine(prev => ({
-      ...prev,
-      focusBlocks: prev.focusBlocks.filter(b => b.blockId !== blockId)
-    }));
-  };
+  /* -------------------- ROUTINE OPS -------------------- */
 
-  // Update an existing focus block in routine
-  const updateFocusBlock = (blockId, updatedBlock) => {
-    setCurrentRoutine(prev => ({
-      ...prev,
-      focusBlocks: prev.focusBlocks.map(b => 
-        b.blockId === blockId ? { ...b, ...updatedBlock } : b
-      )
-    }));
-  };
-
-  // Add exercise to current focus block
-  const addExercise = (exercise) => {
-    const exerciseWithId = {
-      ...exercise,
-      exerciseId: exercise.exerciseId || `exercise_${Date.now()}_${Math.floor(Math.random() * 99999)}`
-    };
-    
-    setCurrentFocusBlock(prev => ({
-      ...prev,
-      exercises: [...prev.exercises, exerciseWithId]
-    }));
-  };
-
-  // Remove exercise from current focus block
-  const removeExercise = (exerciseId) => {
-    setCurrentFocusBlock(prev => ({
-      ...prev,
-      exercises: prev.exercises.filter(e => e.exerciseId !== exerciseId)
-    }));
-  };
-
-  // Update exercise in current focus block
-  const updateExercise = (exerciseId, updatedExercise) => {
-    setCurrentFocusBlock(prev => ({
-      ...prev,
-      exercises: prev.exercises.map(e => 
-        e.exerciseId === exerciseId ? { ...e, ...updatedExercise } : e
-      )
-    }));
-  };
-
-  // Reorder exercises in current focus block
-  const reorderExercises = (fromIndex, toIndex) => {
-    setCurrentFocusBlock(prev => {
-      const newExercises = [...prev.exercises];
-      const [movedExercise] = newExercises.splice(fromIndex, 1);
-      newExercises.splice(toIndex, 0, movedExercise);
-      return {
-        ...prev,
-        exercises: newExercises
-      };
+  const resetRoutine = () => {
+    setCurrentRoutine({
+      routineId: null,
+      name: "",
+      description: "",
+      isPrivate: true,
+      focusBlocks: [],
     });
+    resetCurrentFocusBlock();
   };
 
-  // Reorder focus blocks in routine
-  const reorderFocusBlocks = (fromIndex, toIndex) => {
-    setCurrentRoutine(prev => {
-      const newBlocks = [...prev.focusBlocks];
-      const [movedBlock] = newBlocks.splice(fromIndex, 1);
-      newBlocks.splice(toIndex, 0, movedBlock);
-      return {
-        ...prev,
-        focusBlocks: newBlocks
-      };
-    });
-  };
-
-  // Add resource to an exercise
-  const addResourceToExercise = (exerciseId, resource) => {
-    setCurrentFocusBlock(prev => ({
-      ...prev,
-      exercises: prev.exercises.map(e => {
-        if (e.exerciseId === exerciseId) {
-          return {
-            ...e,
-            resources: [...(e.resources || []), {
-              ...resource,
-              resourceId: `resource_${Date.now()}_${Math.floor(Math.random() * 99999)}`
-            }]
-          };
-        }
-        return e;
-      })
-    }));
-  };
-
-  // Remove resource from exercise
-  const removeResourceFromExercise = (exerciseId, resourceId) => {
-    setCurrentFocusBlock(prev => ({
-      ...prev,
-      exercises: prev.exercises.map(e => {
-        if (e.exerciseId === exerciseId) {
-          return {
-            ...e,
-            resources: (e.resources || []).filter(r => r.resourceId !== resourceId)
-          };
-        }
-        return e;
-      })
-    }));
-  };
-
-  // Calculate duration for current focus block
-  const calculateFocusBlockDuration = () => {
-    return currentFocusBlock.exercises.reduce((total, exercise) => {
-      return total + (parseInt(exercise.duration) || 0);
-    }, 0);
-  };
-
-  // Calculate total routine duration
-  const calculateTotalDuration = () => {
-    return currentRoutine.focusBlocks.reduce((total, block) => {
-      const blockDuration = block.exercises.reduce((sum, ex) => 
-        sum + (parseInt(ex.duration) || 0), 0
-      );
-      return total + blockDuration;
-    }, 0);
-  };
-
-  // Load existing routine for editing
   const loadRoutine = (routine) => {
     setCurrentRoutine(routine);
   };
 
-  // Load focus block for editing
+  const updateRoutineDetails = (updates) => {
+    setCurrentRoutine((prev) => ({ ...prev, ...updates }));
+  };
+
+  /* -------------------- FOCUS BLOCK OPS -------------------- */
+
+  const addFocusBlock = (block) => {
+    const blockWithId = {
+      ...block,
+      blockId: block.blockId || generateId("block"),
+    };
+
+    setCurrentRoutine((prev) => ({
+      ...prev,
+      focusBlocks: [...prev.focusBlocks, blockWithId],
+    }));
+  };
+
+  const updateFocusBlock = (updatedBlock) => {
+    setCurrentRoutine((prev) => ({
+      ...prev,
+      focusBlocks: prev.focusBlocks.map((b) =>
+        b.blockId === updatedBlock.blockId ? updatedBlock : b
+      ),
+    }));
+  };
+
+  const removeFocusBlock = (blockId) => {
+    setCurrentRoutine((prev) => ({
+      ...prev,
+      focusBlocks: prev.focusBlocks.filter((b) => b.blockId !== blockId),
+    }));
+  };
+
   const loadFocusBlock = (block) => {
     setCurrentFocusBlock(block);
   };
 
-  // Reset current focus block
   const resetCurrentFocusBlock = () => {
     setCurrentFocusBlock({
       blockId: null,
-      name: '',
-      description: '',
-      exercises: []
+      name: "",
+      description: "",
+      exercises: [],
     });
   };
 
-  // Reset entire routine
-  const resetRoutine = () => {
-    setCurrentRoutine({
-      routineId: null,
-      name: '',
-      description: '',
-      isPrivate: true,
-      focusBlocks: []
-    });
-    resetCurrentFocusBlock();
-  };
+  /* -------------------- EXERCISE OPS -------------------- */
 
-  // Update routine details (name, description, privacy)
-  const updateRoutineDetails = (updates) => {
-    setCurrentRoutine(prev => ({
+  const addExercise = (exercise = {}) => {
+    const exerciseWithId = {
+      ...exercise,
+      exerciseId:
+        exercise.exerciseId || generateId("exercise"),
+      name: exercise.name || "",
+      duration: exercise.duration || "",
+      tempo: exercise.tempo || "",
+      category: exercise.category || "",
+      notes: exercise.notes || "",
+      resources: exercise.resources || [],
+    };
+
+    setCurrentFocusBlock((prev) => ({
       ...prev,
-      ...updates
+      exercises: [...prev.exercises, exerciseWithId],
     }));
   };
 
-  // Update focus block details (name, description)
-  const updateFocusBlockDetails = (updates) => {
-    setCurrentFocusBlock(prev => ({
+  const updateExercise = (exerciseId, field, value) => {
+    setCurrentFocusBlock((prev) => ({
       ...prev,
-      ...updates
+      exercises: prev.exercises.map((ex) =>
+        ex.exerciseId === exerciseId ? { ...ex, [field]: value } : ex
+      ),
     }));
   };
 
-  const value = {
-    // State
-    currentRoutine,
-    currentFocusBlock,
-    
-    // Routine operations
-    setCurrentRoutine,
-    updateRoutineDetails,
-    loadRoutine,
-    resetRoutine,
-    
-    // Focus block operations
-    setCurrentFocusBlock,
-    updateFocusBlockDetails,
-    addFocusBlock,
-    removeFocusBlock,
-    updateFocusBlock,
-    loadFocusBlock,
-    resetCurrentFocusBlock,
-    
-    // Exercise operations
-    addExercise,
-    removeExercise,
-    updateExercise,
-    reorderExercises,
-    
-    // Resource operations
-    addResourceToExercise,
-    removeResourceFromExercise,
-    
-    // Calculations
-    calculateFocusBlockDuration,
-    calculateTotalDuration,
-    
-    // Reordering
-    reorderFocusBlocks
+  const removeExercise = (exerciseId) => {
+    setCurrentFocusBlock((prev) => ({
+      ...prev,
+      exercises: prev.exercises.filter((ex) => ex.exerciseId !== exerciseId),
+    }));
   };
+
+  const reorderExercises = (newOrder) => {
+    setCurrentFocusBlock((prev) => ({
+      ...prev,
+      exercises: newOrder,
+    }));
+  };
+
+  /* -------------------- CALCULATIONS -------------------- */
+
+  const calculateFocusBlockDuration = (block) => {
+    return block.exercises.reduce(
+      (sum, ex) => sum + Number(ex.duration || 0),
+      0
+    );
+  };
+
+  const calculateTotalDuration = () => {
+    return currentRoutine.focusBlocks.reduce(
+      (sum, block) => sum + calculateFocusBlockDuration(block),
+      0
+    );
+  };
+
+  /* -------------------- REORDER BLOCKS -------------------- */
+
+  const reorderFocusBlocks = (newOrder) => {
+    setCurrentRoutine((prev) => ({
+      ...prev,
+      focusBlocks: newOrder,
+    }));
+  };
+
+  /* -------------------- CONTEXT VALUE -------------------- */
 
   return (
-    <RoutineContext.Provider value={value}>
+    <RoutineContext.Provider
+      value={{
+        // State
+        currentRoutine,
+        currentFocusBlock,
+
+        // Templates
+        loadRoutineTemplate,
+
+        // Routine
+        setCurrentRoutine,
+        loadRoutine,
+        updateRoutineDetails,
+        resetRoutine,
+
+        // Focus Blocks
+        setCurrentFocusBlock,
+        addFocusBlock,
+        updateFocusBlock,
+        removeFocusBlock,
+        loadFocusBlock,
+        resetCurrentFocusBlock,
+        reorderFocusBlocks,
+
+        // Exercises
+        addExercise,
+        updateExercise,
+        removeExercise,
+        reorderExercises,
+
+        // Calculations
+        calculateFocusBlockDuration,
+        calculateTotalDuration,
+      }}
+    >
       {children}
     </RoutineContext.Provider>
   );
-};
-
-export const useRoutine = () => {
-  const context = useContext(RoutineContext);
-  if (!context) {
-    throw new Error('useRoutine must be used within RoutineProvider');
-  }
-  return context;
 };
