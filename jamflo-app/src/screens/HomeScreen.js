@@ -208,6 +208,7 @@ export default function HomeScreen({ navigation }) {
       <BottomNav activeTab="Home" onTabPress={(t) => {
         if (t === "Create") handleCreateRoutine();
         if (t === "Home") navigation.navigate("Home");
+        if (t === "Community") navigation.navigate("Community");
       }} />
     </View>
   );
