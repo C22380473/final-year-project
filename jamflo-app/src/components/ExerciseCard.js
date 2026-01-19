@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "./Card";
@@ -17,81 +17,105 @@ export const ExerciseCard = ({
   onReorderDown,
   onRemove,
   onAddResource,
-}) => (
-  <Card>
-    <View style={styles.headerRow}>
-      <View style={styles.left}>
-        <ReorderButtons
-          index={index}
-          total={total}
-          onUp={onReorderUp}
-          onDown={onReorderDown}
-        />
-        <Text style={styles.subtitle}>Exercise {index + 1}</Text>
+  onRemoveResource,
+}) => {
+  const [resourceUrl, setResourceUrl] = useState("");
+
+  const handleAdd = () => {
+    onAddResource?.(resourceUrl);
+    setResourceUrl("");
+  };
+
+  return (
+    <Card>
+      <View style={styles.headerRow}>
+        <View style={styles.left}>
+          <ReorderButtons index={index} total={total} onUp={onReorderUp} onDown={onReorderDown} />
+          <Text style={styles.subtitle}>Exercise {index + 1}</Text>
+        </View>
+
+        {total > 1 && (
+          <TouchableOpacity onPress={onRemove} style={styles.deleteExerciseBtn}>
+            <Ionicons name="trash-outline" size={18} color="#E74C3C" />
+            <Text style={styles.deleteExerciseText}>Delete</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {total > 1 && (
-        <TouchableOpacity onPress={onRemove} style={styles.trashButton}>
-          <Ionicons name="trash-outline" size={18} color="#E74C3C" />
+      <Text style={styles.label}>Exercise Name *</Text>
+      <TextInput
+        style={styles.input}
+        value={exercise.name}
+        placeholder="Name"
+        onChangeText={(v) => onChange("name", v)}
+      />
+
+      <View style={styles.row}>
+        <View style={{ flex: 1, marginRight: 6 }}>
+          <Text style={styles.label}>Duration *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="5"
+            keyboardType="numeric"
+            value={exercise.duration}
+            onChangeText={(v) => onChange("duration", v)}
+          />
+        </View>
+
+        <View style={{ flex: 1, marginLeft: 6 }}>
+          <Text style={styles.label}>Tempo</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Optional"
+            keyboardType="numeric"
+            value={exercise.tempo}
+            onChangeText={(v) => onChange("tempo", v)}
+          />
+        </View>
+      </View>
+
+      <Text style={styles.label}>Category</Text>
+      <CategorySelector value={exercise.category} onChange={(c) => onChange("category", c)} />
+
+      <Text style={styles.label}>Notes</Text>
+      <TextInput
+        style={[styles.input, styles.textArea]}
+        multiline
+        value={exercise.notes}
+        onChangeText={(v) => onChange("notes", v)}
+      />
+
+      {/* Resources list + remove */}
+      <ResourceList
+        resources={exercise.resources || []}
+        onRemove={(resourceId) => onRemoveResource?.(resourceId)}
+      />
+
+      {/* Inline Add Resource */}
+      <Text style={[styles.label, { marginTop: 6 }]}>Add Resource</Text>
+      <View style={styles.resourceRow}>
+        <TextInput
+          style={[styles.input, { flex: 1, marginBottom: 0 }]}
+          placeholder="Paste a link (YouTube, PDF, etc.)"
+          autoCapitalize="none"
+          value={resourceUrl}
+          onChangeText={setResourceUrl}
+        />
+
+        {!!resourceUrl && (
+          <TouchableOpacity onPress={() => setResourceUrl("")} style={styles.clearBtn}>
+            <Ionicons name="close-circle" size={22} color="#999" />
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
+          <Text style={styles.addBtnText}>Add</Text>
         </TouchableOpacity>
-      )}
-    </View>
-
-    <Text style={styles.label}>Exercise Name *</Text>
-    <TextInput
-      style={styles.input}
-      value={exercise.name}
-      placeholder="Name"
-      onChangeText={(v) => onChange("name", v)}
-    />
-
-    <View style={styles.row}>
-      <View style={{ flex: 1, marginRight: 6 }}>
-        <Text style={styles.label}>Duration *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="5"
-          keyboardType="numeric"
-          value={exercise.duration}
-          onChangeText={(v) => onChange("duration", v)}
-        />
       </View>
-
-      <View style={{ flex: 1, marginLeft: 6 }}>
-        <Text style={styles.label}>Tempo</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Optional"
-          keyboardType="numeric"
-          value={exercise.tempo}
-          onChangeText={(v) => onChange("tempo", v)}
-        />
-      </View>
-    </View>
-
-    <Text style={styles.label}>Category</Text>
-    <CategorySelector value={exercise.category} onChange={(c) => onChange("category", c)} />
-
-    <Text style={styles.label}>Notes</Text>
-    <TextInput
-      style={[styles.input, styles.textArea]}
-      multiline
-      value={exercise.notes}
-      onChangeText={(v) => onChange("notes", v)}
-    />
-
-    <ResourceList resources={exercise.resources} />
-
-    <View style={{ flexDirection: "row", marginTop: 12 }}>
-      <GradientButton title="Add Resource" onPress={onAddResource} style={{ flex: 1 }} />
-        <OutlineButton
-          title="Remove"
-          onPress={onRemove}
-          style={{ flex: 1, marginLeft: 8 }}
-        />
-    </View>
-  </Card>
-);
+  
+    </Card>
+  );
+};
 
 const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
@@ -110,13 +134,18 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: "row" },
   textArea: { minHeight: 80 },
-  outlineButton: {
-    borderWidth: 1,
-    borderColor: "#218ED5",
-    borderRadius: 999,
-    paddingVertical: 10,
-    alignItems: "center",
-    flex: 1,
+
+  resourceRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 },
+  addBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: "#218ED5",
   },
-  outlineText: { color: "#218ED5", fontWeight: "600" },
+  addBtnText: { color: "#fff", fontWeight: "700" },
+  deleteExerciseBtn: { flexDirection: "row", alignItems: "center", padding: 6 },
+deleteExerciseText: { marginLeft: 6, color: "#E74C3C", fontWeight: "700", fontSize: 12 },
+resourceRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 },
+clearBtn: { paddingVertical: 6 },
+
 });

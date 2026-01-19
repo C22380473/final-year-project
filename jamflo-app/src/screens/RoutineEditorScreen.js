@@ -79,10 +79,12 @@ export default function RoutineEditorScreen({ navigation }) {
         totalDuration: calculateTotalDuration(),
       };
 
-      const result = currentRoutine.routineId
-        ? await updateRoutine(currentRoutine.routineId, routineData)
-        : await createRoutine(user.uid, routineData);
+      const routineDocId = currentRoutine.routineId || currentRoutine.id;
 
+      const result = routineDocId
+        ? await updateRoutine(routineDocId, routineData)
+        : await createRoutine(user.uid, routineData);
+        
       setSaving(false);
 
       if (result.success) {

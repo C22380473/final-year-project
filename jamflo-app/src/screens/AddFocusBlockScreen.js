@@ -7,14 +7,12 @@ import { useRoutine } from "../contexts/RoutineContext";
 import { BackBreadcrumbHeader } from "../components/BackBreadcrumbHeader";
 import { Card } from "../components/Card";
 import { ExerciseCard } from "../components/ExerciseCard";
-import { ResourceModal } from "../components/ResourceModal";
 import { OutlineButton } from "../components/OutlineButton";
-
 
 export default function AddFocusBlockScreen({ navigation, route }) {
   const {
-    currentRoutine,       
-    loadFocusBlock,   
+    currentRoutine,
+    loadFocusBlock,
     currentFocusBlock,
     addFocusBlock,
     updateFocusBlock,
@@ -29,28 +27,23 @@ export default function AddFocusBlockScreen({ navigation, route }) {
   const [focusDescription, setFocusDescription] = useState("");
   const [exercises, setExercises] = useState([]);
 
-  // Resource modal state
-  const [showResourceModal, setShowResourceModal] = useState(false);
-  const [selectedExerciseId, setSelectedExerciseId] = useState(null);
-  const [resourceType, setResourceType] = useState(null);
-  const [resourceUrl, setResourceUrl] = useState("");
-
   // Load data when editing or creating new
   useEffect(() => {
-  if (isEditing && blockId) {
-    const block = currentRoutine.focusBlocks.find(b => b.blockId === blockId);
-    loadFocusBlock(block);
-
-    setFocusName(block.name);
-    setFocusDescription(block.description);
-    setExercises(block.exercises);
-  } else {
-    resetCurrentFocusBlock();
-    setFocusName("");
-    setFocusDescription("");
-    setExercises([]);
-  }
-}, [isEditing, blockId]);
+    if (isEditing && blockId) {
+      const block = currentRoutine.focusBlocks.find((b) => b.blockId === blockId);
+      if (block) {
+        loadFocusBlock(block);
+        setFocusName(block.name);
+        setFocusDescription(block.description);
+        setExercises(block.exercises || []);
+      }
+    } else {
+      resetCurrentFocusBlock();
+      setFocusName("");
+      setFocusDescription("");
+      setExercises([]);
+    }
+  }, [isEditing, blockId]);
 
   // Add a blank exercise
   const addNewExercise = () => {
@@ -75,7 +68,12 @@ export default function AddFocusBlockScreen({ navigation, route }) {
 
     Alert.alert("Remove Exercise", "Are you sure?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: () => setExercises((prev) => prev.filter((e) => e.exerciseId !== exerciseId)) },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () =>
+          setExercises((prev) => prev.filter((e) => e.exerciseId !== exerciseId)),
+      },
     ]);
   };
 
@@ -101,47 +99,70 @@ export default function AddFocusBlockScreen({ navigation, route }) {
     );
   };
 
-  // Modal handlers
-  const openResourceModal = (exerciseId) => {
-    setSelectedExerciseId(exerciseId);
-    setResourceType(null);
-    setResourceUrl("");
-    setShowResourceModal(true);
+  // -------- Resources (inline) --------
+
+  const detectResourceType = (url) => {
+    const u = (url || "").trim().toLowerCase();
+    if (!u) return "link";
+
+    if (u.includes("youtube.com") || u.includes("youtu.be") || u.includes("vimeo.com")) {
+      return "video";
+    }
+    if (u.endsWith(".pdf")) return "file";
+
+    // default
+    return "file"; // if you prefer general links as "file" (document icon) for now
+    // return "link"; // alternatively, if you want a separate type
   };
 
-  const closeResourceModal = () => {
-    setShowResourceModal(false);
-    setSelectedExerciseId(null);
-    setResourceType(null);
-    setResourceUrl("");
+  const isValidUrl = (url) => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+      return false;
+    }
   };
 
-  const handleSaveResource = () => {
-    if (!resourceType || !resourceUrl.trim()) {
-      Alert.alert("Error", "Please select a type and enter a URL.");
+  const addResourceToExercise = (exerciseId, url) => {
+    const trimmed = (url || "").trim();
+
+    if (!trimmed) {
+      Alert.alert("Error", "Please paste a URL.");
+      return;
+    }
+    if (!isValidUrl(trimmed)) {
+      Alert.alert("Error", "That doesn’t look like a valid URL. Make sure it starts with http(s).");
       return;
     }
 
+    const newResource = {
+      resourceId: `resource_${Date.now()}_${Math.floor(Math.random() * 99999)}`, // ✅ keep your format
+      type: detectResourceType(trimmed),
+      url: trimmed,
+      addedAt: new Date().toISOString(),
+    };
+
     setExercises((prev) =>
       prev.map((ex) =>
-        ex.exerciseId === selectedExerciseId
+        ex.exerciseId === exerciseId
+          ? { ...ex, resources: [...(ex.resources || []), newResource] }
+          : ex
+      )
+    );
+  };
+
+  const removeResourceFromExercise = (exerciseId, resourceId) => {
+    setExercises((prev) =>
+      prev.map((ex) =>
+        ex.exerciseId === exerciseId
           ? {
               ...ex,
-              resources: [
-                ...ex.resources,
-                {
-                  resourceId: `resource_${Date.now()}_${Math.floor(Math.random() * 99999)}`,
-                  type: resourceType,
-                  url: resourceUrl,
-                  addedAt: new Date().toISOString(),
-                },
-              ],
+              resources: (ex.resources || []).filter((r) => r.resourceId !== resourceId),
             }
           : ex
       )
     );
-
-    closeResourceModal();
   };
 
   // Total duration
@@ -161,7 +182,10 @@ export default function AddFocusBlockScreen({ navigation, route }) {
     }
 
     const focusBlock = {
-      blockId: blockId || currentFocusBlock.blockId || `block_${Date.now()}_${Math.floor(Math.random() * 99999)}`,
+      blockId:
+        blockId ||
+        currentFocusBlock.blockId ||
+        `block_${Date.now()}_${Math.floor(Math.random() * 99999)}`,
       name: focusName,
       description: focusDescription,
       exercises,
@@ -169,7 +193,9 @@ export default function AddFocusBlockScreen({ navigation, route }) {
     };
 
     if (isEditing) {
-      updateFocusBlock(blockId, focusBlock);
+      // ✅ RoutineContext.updateFocusBlock expects the full updated block
+      updateFocusBlock(focusBlock);
+
       Alert.alert("Success", "Focus block updated!", [
         { text: "OK", onPress: () => navigation.navigate("RoutineEditor") },
       ]);
@@ -251,7 +277,10 @@ export default function AddFocusBlockScreen({ navigation, route }) {
             onReorderUp={() => moveExerciseUp(index)}
             onReorderDown={() => moveExerciseDown(index)}
             onRemove={() => handleRemoveExercise(exercise.exerciseId)}
-            onAddResource={() => openResourceModal(exercise.exerciseId)}
+            onAddResource={(url) => addResourceToExercise(exercise.exerciseId, url)}
+            onRemoveResource={(resourceId) =>
+              removeResourceFromExercise(exercise.exerciseId, resourceId)
+            }
           />
         ))}
 
@@ -263,28 +292,16 @@ export default function AddFocusBlockScreen({ navigation, route }) {
             style={{ flex: 1, marginRight: 10 }}
           />
 
-        <OutlineButton
-          title="Cancel"
-          onPress={() => {
-            resetCurrentFocusBlock();
-            navigation.goBack();
-          }}
-          style={{ flex: 1 }}
-        />
-
+          <OutlineButton
+            title="Cancel"
+            onPress={() => {
+              resetCurrentFocusBlock();
+              navigation.goBack();
+            }}
+            style={{ flex: 1 }}
+          />
         </View>
       </ScrollView>
-
-      {/* Resource Modal */}
-      <ResourceModal
-        visible={showResourceModal}
-        resourceType={resourceType}
-        setResourceType={setResourceType}
-        resourceUrl={resourceUrl}
-        setResourceUrl={setResourceUrl}
-        onSave={handleSaveResource}
-        onClose={closeResourceModal}
-      />
 
       <BottomNav activeTab="Create" onTabPress={(tab) => tab === "Home" && navigation.navigate("Home")} />
     </View>
@@ -315,24 +332,16 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   bottomRow: { flexDirection: "row", marginTop: 20, marginBottom: 20 },
-  outlineButton: {
-    borderWidth: 1,
-    borderColor: "#218ED5",
-    borderRadius: 999,
-    paddingVertical: 11,
-    alignItems: "center",
-  },
-  
-  addExerciseButton: {
-  paddingVertical: 10,
-  paddingHorizontal: 15,
-  borderRadius: 5,
-  alignItems: "center",
-  justifyContent: "center",
-},
 
-addExerciseText: {
-  fontSize: 16,
-  fontWeight: "600",
-}
+  addExerciseButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addExerciseText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });

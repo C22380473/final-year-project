@@ -57,7 +57,8 @@ export const getUserRoutines = async (userId) => {
     
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      routines.push({ 
+      routines.push({
+        routineId: doc.id,
         id: doc.id, 
         ...data,
         // Convert Firestore timestamps to JS dates
@@ -92,6 +93,7 @@ export const getRoutineById = async (routineId) => {
     if (docSnap.exists()) {
       const data = docSnap.data();
       const routine = { 
+        routineId: docSnap.id,
         id: docSnap.id, 
         ...data,
         createdAt: data.createdAt?.toDate(),
@@ -193,6 +195,7 @@ export const getPublicRoutines = async (limit = 20) => {
       if (routines.length < limit) {
         const data = doc.data();
         routines.push({ 
+          routineId: doc.id,
           id: doc.id, 
           ...data,
           createdAt: data.createdAt?.toDate(),
