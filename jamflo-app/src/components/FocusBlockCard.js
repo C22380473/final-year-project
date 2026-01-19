@@ -14,6 +14,14 @@ export const FocusBlockCard = ({
   onEdit,
   onRemove,
 }) => {
+  
+  // Calculate duration directly from exercises (fixed for templates + scratch)
+  const totalMins =
+    block?.exercises?.reduce((sum, ex) => sum + Number(ex?.duration || 0), 0) ||
+    0;
+
+  const exerciseCount = block?.exercises?.length || 0;
+
   return (
     <Card>
       <View style={styles.row}>
@@ -30,7 +38,7 @@ export const FocusBlockCard = ({
             {block.exercises.length} Exercise
             {block.exercises.length !== 1 ? "s" : ""}
           </Text>
-          <Text style={styles.meta}>{block.totalDuration || 0} mins</Text>
+          <Text style={styles.meta}>{totalMins} mins</Text>
         </View>
 
         <View style={styles.actions}>
