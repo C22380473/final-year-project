@@ -1,4 +1,4 @@
-import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, getDocs, query, where, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, getDocs, query, where, orderBy, serverTimestamp, limit } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 
 const ROUTINES_COLLECTION = 'routines';
@@ -180,39 +180,37 @@ export const deleteRoutine = async (routineId) => {
  * @param {number} limit - Maximum number of routines to fetch
  * @returns {Promise<Object>} Result object with success status and routines array
  */
-export const getPublicRoutines = async (limit = 20) => {
+export const getPublicRoutines = async (max = 20) => {
   try {
     const q = query(
       collection(db, ROUTINES_COLLECTION),
-      where('isPrivate', '==', false),
-      orderBy('updatedAt', 'desc')
+      where("isPrivate", "==", false),
+      orderBy("updatedAt", "desc"),
+      limit(max)
     );
-    
+
     const querySnapshot = await getDocs(q);
-    const routines = [];
-    
-    querySnapshot.forEach((doc) => {
-      if (routines.length < limit) {
-        const data = doc.data();
-        routines.push({ 
-          routineId: doc.id,
-          id: doc.id, 
-          ...data,
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate()
-        });
-      }
+
+    const routines = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        routineId: doc.id,
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate(),
+        updatedAt: data.updatedAt?.toDate(),
+      };
     });
-    
+
     console.log(`Retrieved ${routines.length} public routines`);
     return { success: true, routines };
   } catch (error) {
-    console.error('Error getting public routines:', error);
-    return { 
-      success: false, 
-      error: error.message, 
+    console.error("Error getting public routines:", error);
+    return {
+      success: false,
+      error: error.message,
       routines: [],
-      message: 'Failed to load public routines.' 
+      message: "Failed to load public routines.",
     };
   }
 };

@@ -77,6 +77,8 @@ export default function RoutineEditorScreen({ navigation }) {
         isPrivate,
         focusBlocks: currentRoutine.focusBlocks,
         totalDuration: calculateTotalDuration(),
+        authorId: user.uid,
+        authorName: user.displayName || "Anonymous",
       };
 
       const routineDocId = currentRoutine.routineId || currentRoutine.id;
