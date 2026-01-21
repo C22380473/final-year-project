@@ -179,11 +179,43 @@ export const RoutineProvider = ({ children }) => {
 
   /* -------------------- REORDER BLOCKS -------------------- */
 
-  const reorderFocusBlocks = (newOrder) => {
-    setCurrentRoutine((prev) => ({
-      ...prev,
-      focusBlocks: newOrder,
-    }));
+   const moveItem = (arr = [], from, to) => {
+    if (!Array.isArray(arr)) return [];
+    if (from === to) return arr;
+    if (from < 0 || to < 0) return arr;
+    if (from >= arr.length || to >= arr.length) return arr;
+
+    const copy = [...arr];
+    const [item] = copy.splice(from, 1);
+    copy.splice(to, 0, item);
+    return copy;
+  };
+
+  /* -------------------- REORDER BLOCKS -------------------- */
+
+  // ✅ Backwards compatible:
+  // - reorderFocusBlocks(newArray)
+  // - reorderFocusBlocks(fromIndex, toIndex)
+  const reorderFocusBlocks = (arg1, arg2) => {
+    setCurrentRoutine((prev) => {
+      // called as reorderFocusBlocks(newOrderArray)
+      if (Array.isArray(arg1)) {
+        return { ...prev, focusBlocks: arg1 };
+      }
+
+      // called as reorderFocusBlocks(fromIndex, toIndex)
+      const fromIndex = Number(arg1);
+      const toIndex = Number(arg2);
+
+      if (!Number.isFinite(fromIndex) || !Number.isFinite(toIndex)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        focusBlocks: moveItem(prev.focusBlocks, fromIndex, toIndex),
+      };
+    });
   };
 
   /* -------------------- CONTEXT VALUE -------------------- */

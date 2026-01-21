@@ -35,8 +35,7 @@ export const FocusBlockCard = ({
         <View style={styles.infoContainer}>
           <Text style={styles.title}>{block.name}</Text>
           <Text style={styles.subtitle}>
-            {block.exercises.length} Exercise
-            {block.exercises.length !== 1 ? "s" : ""}
+            {exerciseCount} Exercise{exerciseCount !== 1 ? "s" : ""}
           </Text>
           <Text style={styles.meta}>{totalMins} mins</Text>
         </View>
