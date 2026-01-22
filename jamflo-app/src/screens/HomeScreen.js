@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AppHeader } from "../components/AppHeader";
@@ -23,24 +24,16 @@ export default function HomeScreen({ navigation }) {
 
   const { loadRoutine, resetRoutine } = useRoutine();
 
-  // Load user + routines on mount
-  useEffect(() => {
-    const user = auth.currentUser;
-    if (user?.displayName) setUsername(user.displayName);
-
-    fetchRoutines();
-  }, []);
-
-  const fetchRoutines = async () => {
+  const fetchRoutines = useCallback(async () => {
     try {
       const user = auth.currentUser;
       if (!user) {
         setLoading(false);
+        setRefreshing(false);
         return;
       }
 
       const result = await getUserRoutines(user.uid);
-
       if (result.success) {
         setRoutines(result.routines || []);
       }
@@ -50,7 +43,22 @@ export default function HomeScreen({ navigation }) {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+    }, []);
+
+    // Load user + routines on mount (first render)
+    useEffect(() => {
+      const user = auth.currentUser;
+      if (user?.displayName) setUsername(user.displayName);
+        fetchRoutines();
+    }, [fetchRoutines]);
+
+    // Reload routines every time Home screen is focused
+    useFocusEffect(
+      useCallback(() => {
+      fetchRoutines();
+      }, [fetchRoutines])
+    );
+ 
 
   const onRefresh = () => {
     setRefreshing(true);

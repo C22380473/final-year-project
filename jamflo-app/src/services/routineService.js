@@ -221,33 +221,36 @@ export const getPublicRoutines = async (max = 20) => {
  * @param {string} userId - The user creating the duplicate
  * @returns {Promise<Object>} Result object with success status and new routine ID
  */
-export const duplicateRoutine = async (routineId, userId) => {
+export const duplicateRoutine = async (routineId, user) => {
   try {
-    // Get the original routine
+    if (!user?.uid) return { success: false, message: "Not logged in" };
+
     const { success, routine } = await getRoutineById(routineId);
-    
-    if (!success) {
-      return { success: false, error: 'Original routine not found' };
-    }
-    
-    // Create new routine with same data but different user
-    const { id: originalId, createdAt, updatedAt, ...routineData } = routine;
+    if (!success) return { success: false, error: "Original routine not found" };
+
+    const { id, routineId: rid, createdAt, updatedAt, userId: oldUserId, ...routineData } = routine;
+
+    // strip any system ids
+    delete routineData.id;
+    delete routineData.routineId;
+
     const newRoutineData = {
       ...routineData,
       name: `${routineData.name} (Copy)`,
-      isPrivate: true // Always make copies private
+      isPrivate: true,
+      sourceRoutineId: rid || routineId,
+      copiedFromUserId: oldUserId || null,
+      authorId: user.uid,
+      authorName: user.displayName || "Anonymous",
     };
-    
-    return await createRoutine(userId, newRoutineData);
+
+    return await createRoutine(user.uid, newRoutineData);
   } catch (error) {
-    console.error('Error duplicating routine:', error);
-    return { 
-      success: false, 
-      error: error.message,
-      message: 'Failed to duplicate routine.' 
-    };
+    console.error("Error duplicating routine:", error);
+    return { success: false, error: error.message, message: "Failed to duplicate routine." };
   }
 };
+
 
 export default {
   createRoutine,

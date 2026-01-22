@@ -79,14 +79,19 @@ export default function RoutineEditorScreen({ navigation }) {
         totalDuration: calculateTotalDuration(),
         authorId: user.uid,
         authorName: user.displayName || "Anonymous",
+        userId: currentRoutine.userId || user.uid
       };
 
-      const routineDocId = currentRoutine.routineId || currentRoutine.id;
+      const routineDocId = currentRoutine.id || currentRoutine.routineId;
 
-      const result = routineDocId
-        ? await updateRoutine(routineDocId, routineData)
-        : await createRoutine(user.uid, routineData);
-        
+      // only allow update if this routine belongs to the current user
+      const isMine = currentRoutine.userId === user.uid;
+
+      const result =
+        routineDocId && isMine
+          ? await updateRoutine(routineDocId, routineData)
+          : await createRoutine(user.uid, routineData);
+
       setSaving(false);
 
       if (result.success) {
@@ -107,6 +112,9 @@ export default function RoutineEditorScreen({ navigation }) {
       setSaving(false);
       Alert.alert("Error", "Unexpected error while saving");
     }
+    console.log("EDITING doc id:", currentRoutine.id, currentRoutine.routineId);
+    console.log("EDITING userId:", currentRoutine.userId, "auth:", user.uid);
+
   };
 
   return (

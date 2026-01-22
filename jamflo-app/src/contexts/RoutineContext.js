@@ -66,9 +66,28 @@ export const RoutineProvider = ({ children }) => {
     resetCurrentFocusBlock();
   };
 
-  const loadRoutine = (routine) => {
-    setCurrentRoutine(routine);
+  const normalizeRoutine = (routine) => {
+  return {
+    ...routine,
+    focusBlocks: (routine.focusBlocks || []).map((block) => ({
+      ...block,
+      blockId: block.blockId || generateId("block"),
+      exercises: (block.exercises || []).map((ex) => ({
+        ...ex,
+        exerciseId: ex.exerciseId || generateId("exercise"),
+        resources: ex.resources || [],
+      })),
+    })),
   };
+};
+
+
+  const loadRoutine = (routine) => {
+    const normalized = normalizeRoutine(routine);
+    setCurrentRoutine(normalized);
+    resetCurrentFocusBlock();
+};
+
 
   const updateRoutineDetails = (updates) => {
     setCurrentRoutine((prev) => ({ ...prev, ...updates }));

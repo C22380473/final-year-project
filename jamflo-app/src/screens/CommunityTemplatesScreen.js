@@ -81,10 +81,12 @@ export default function CommunityTemplatesScreen({ navigation }) {
       return;
     }
 
-    const res = await duplicateRoutine(routineId, user.uid);
+    console.log("SAVE TEMPLATE auth:", auth.currentUser?.uid);
+
+    const res = await duplicateRoutine(routineId, user);
     if (res?.success) {
       Alert.alert("Saved", "A private copy was added to your routines.");
-      // optionally navigate Home/MyRoutines
+      navigation.navigate("Home");
     } else {
       Alert.alert("Error", res?.message || "Could not save this routine.");
     }
