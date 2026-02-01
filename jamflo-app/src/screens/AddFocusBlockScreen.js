@@ -193,7 +193,7 @@ export default function AddFocusBlockScreen({ navigation, route }) {
     };
 
     if (isEditing) {
-      // ✅ RoutineContext.updateFocusBlock expects the full updated block
+      // RoutineContext.updateFocusBlock expects the full updated block
       updateFocusBlock(focusBlock);
 
       Alert.alert("Success", "Focus block updated!", [
