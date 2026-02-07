@@ -14,6 +14,8 @@ import CreateRoutineScreen from '../screens/CreateRoutineScreen';
 import AddFocusBlockScreen from '../screens/AddFocusBlockScreen';
 import RoutineEditorScreen from '../screens/RoutineEditorScreen';
 import CommunityTemplatesScreen from '../screens/CommunityTemplatesScreen';
+import PracticeSessionScreen from "../screens/PracticeSessionScreen";
+
 
 
 import { onAuthStateChanged } from "firebase/auth";
@@ -86,6 +88,8 @@ export default function AppNavigator() {
             <Stack.Screen name="RoutineEditor" component={RoutineEditorScreen} />
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Community" component={CommunityTemplatesScreen} />
+            <Stack.Screen name="PracticeSession" component={PracticeSessionScreen} />
+
 
           </>
         ) : (
@@ -96,6 +100,8 @@ export default function AppNavigator() {
             <Stack.Screen name="AddFocusBlock" component={AddFocusBlockScreen} />
             <Stack.Screen name="RoutineEditor" component={RoutineEditorScreen} />
             <Stack.Screen name="Community" component={CommunityTemplatesScreen} />
+            <Stack.Screen name="PracticeSession" component={PracticeSessionScreen} />
+
 
           </>
         )}

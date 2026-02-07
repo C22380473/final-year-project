@@ -72,7 +72,7 @@ export default function HomeScreen({ navigation }) {
       "Ready to start practicing?",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Start Practice", onPress: () => Alert.alert("Coming Soon") },
+        { text: "Start Practice", onPress: () => navigation.navigate("PracticeSession", { routineId: routine?.routineId ?? routine?.id,}) },
       ]
     );
   };

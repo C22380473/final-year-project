@@ -233,7 +233,12 @@ export default function RoutineEditorScreen({ navigation }) {
 
       <BottomNav
         activeTab="Create"
-        onTabPress={(t) => t === "Home" && navigation.navigate("Home")}
+        onTabPress={(t) => {
+          if (t === "Home") navigation.navigate("Home");
+          if (t === "Create") navigation.navigate("CreateRoutine");
+          if (t === "Community") navigation.navigate("Community");
+        }}
+        
       />
     </View>
   );
