@@ -1,6 +1,8 @@
 # Weekly Logs
 
-## Week 3 
+## Semester 1
+
+### Week 3 
 
 **Work Completed:**
 - Finalised the final year project idea and confirmed the project direction.  
@@ -16,8 +18,9 @@
 - Draft Deliverables, Project Schedule, and Conclusion sections.  
 - Clarify project scope and technical requirements.  
 
+--- 
 
-## Week 4 
+#### Week 4 
 
 **Work Completed:**
 - Finalised proposal draft, including Deliverables, Project Schedule and Conclusion sections.  
@@ -33,7 +36,7 @@
 - Begin wireframe sketches and system diagrams.  
 - Plan research tasks for the requirements gathering phase.
 
-## Week 5 
+### Week 5 
 
 **Work Completed:**
  
@@ -50,9 +53,9 @@
 - Begin working on use cases and system analysis to outline interactions and system behaviour.
 - Start drafting initial design diagrams if time allows.
 
+---
 
-
-## Week 6
+### Week 6
 
 **Work Completed:**
 
@@ -76,11 +79,9 @@
 - Start the literature review section of the report to provide background and theoretical context for the project.
 - Begin preliminary exploration of the system implementation phase.
 
+---
 
-
-
-
-## Week 7
+### Week 7
 
 **Work Completed:**
 
@@ -103,8 +104,9 @@
 - Begin drafting use cases and developing the UML system diagram to represent system structure and interactions.
 - Start Section 4, focusing on system design elements and implementation planning.
 
+---
 
-## Week 8
+### Week 8
 **Work Completed:**
 - Concentrated on the Gamification and Metronome components of the system, expanding their descriptions and functionalities within Section 2 of the report.
 - Finalised Section 2, ensuring all key features and literature connections were clearly articulated.
@@ -120,24 +122,26 @@
 - 
 Integrate supervisor feedback into the literature review and ensure all sections maintain alignment with the project objectives.
 
-## Week 9
+---
+
+### Week 9
 **Work Completed:**
 - Finalised all use cases, ensuring they accurately represent user interactions and system functionality.
 - Completed Section 4 (System Design), detailing software methodologies and providing an overview of the system architecture.
 - Created and included class diagrams, sequence diagrams for core functions, an architecture diagram, and a database ERD, along with detailed wireframe explanations.
 - Completed Section 5 (Testing and Evaluation), outlining testing strategies and evaluation methods.
 
-
 **Meetings/Discussions:**
 - Supervisor Meeting: Reviewed progress on gamified learning and the newly completed sections. Discussed the remaining tasks for Sections 4–6, including finalising system design, testing, and prototype development. Agreed on a date to submit the report for review before the final due date next week.
-
 
 **Plans for Next Week:**
 - Submit the full report for supervisor review.
 - Revise and correct any issues or feedback identified during the review process.
 - Continue developing the prototype and seek supervisor guidance on implementation and improvements.
 
-## Week 10
+---
+
+### Week 10
 
 **Work Completed:**
 - Completed Section 6 and Section 7 of the interim report and finalised the full document for submission.
@@ -157,7 +161,9 @@ Supervisor Meeting:
 - Continue developing the prototype, focusing on creating routine based features and basic core functionality.
 - Prepare the interim presentation slides.
 
-## Week 11
+---
+
+### Week 11
 
 **Work Completed:**
 - Expanded the prototype by creating the core functionality for building a routine from scratch
@@ -175,4 +181,69 @@ Supervisor Meeting:
 - Continue developing the prototype, focusing on practice-routine functionality if time allows after demo preparation.
 - Review any additional feedback provided after demo.
 
+---
 
+## Semester 2
+
+### Week 1
+**Work Completed:**
+
+- Implemented full routine saving and editing functionality, allowing users to create, edit, and delete routines with changes persisting correctly.
+- Added ownership checks so users can only edit their own routines, preventing accidental modification of shared templates.
+- Introduced validation for routine details (name, description, duration, visibility) before saving to reduce incomplete or invalid routines.
+- Developed a community templates feature that displays only routines marked as public.
+- Added search and category filtering to support routine discovery.
+- Implemented a "Save routine" workflow** that creates a private copy for users rather than modifying the original shared routine.
+- Ensured community routines are read-only, preventing shared data conflicts.
+- Designed routines to be structured around focus blocks, each containing multiple exercises.
+- Enabled users to add, edit, remove, and reorder exercises within focus blocks.
+- Implemented automatic duration calculations, updating total routine and focus block times dynamically.
+- Added support for learning resources (links, videos, PDFs) attached to individual exercises.
+- Implemented URL validation and removal options to prevent incorrect or stuck resources.
+- Improved the home dashboard to refresh routine data whenever users return to the screen.
+- Added view, edit, and delete actions** for routines, including confirmation prompts to prevent accidental deletions.
+- Enhanced routine summaries to clearly display focus blocks, exercises, and total duration at a glance.
+
+ **Meetings / Discussions:**
+
+- Discussed work completed over the winter break.
+- Reviewed interim presentation feedback and identified areas requiring improvement moving forward.
+
+ **Plans for Next Week:**
+
+- Fix the remaining login persistence bug.
+- Create a clear list of actions and tasks to complete for the next development phase.
+- Confirm the project deadline and adjust planning accordingly.
+
+---
+
+### Week 2
+**Work Completed:**
+
+- Defined a clear feature set and list of core actions to guide ongoing development.
+- Resolved a login persistence bug, where authentication state was stored only in memory:
+    - Implemented AsyncStorage persistence to ensure Firebase authentication state is retained between app restarts.
+- Conducted research into active session best practices, supported by broader UX/UI and mobile learning literature:
+    - Focused on reducing cognitive load through simplicity and minimalism.
+    - Prioritised clear structure and showing options only when necessary to maintain user flow.
+    - Updated the original high-fidelity wireframe design to reflect these principles.
+- Built the base UI for the practice session.
+- Implemented adding a resource functionality
+- Completed brief research into metronome implementation options.
+
+---
+
+**Meetings / Discussions:**
+
+- Met with the supervisor to discuss the updated project timeline and prioritisation of upcoming features.
+- Agreed on a focused action plan for the next development phase.
+- Discussed the potential to expand literature review content in future, particularly around gamification, user profiles and motivational design.
+- Selected three priority tasks to complete in the coming week.
+
+---
+
+**Plans for Next Week:**
+
+- Complete note-taking functionality within the practice session.
+- Implement a session timer.
+- Add session state saving to allow users to resume practice sessions seamlessly.

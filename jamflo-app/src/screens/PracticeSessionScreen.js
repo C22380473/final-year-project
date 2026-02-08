@@ -1,6 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
-import { doc, getDoc } from "firebase/firestore";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Dimensions,
@@ -10,6 +21,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  TextInput
 } from "react-native";
 import { AppHeader } from "../components/AppHeader";
 import { BottomNav } from "../components/BottomNav";
@@ -26,7 +38,6 @@ export default function PracticeSessionScreen({ navigation, route }) {
   const fallbackRoutine = {
     name: "Practice Session",
     focusBlocks: [],
-    notes: [],
     resources: [],
   };
 
@@ -47,6 +58,93 @@ export default function PracticeSessionScreen({ navigation, route }) {
   const [bpm, setBpm] = useState(60);
   const [beats, setBeats] = useState(2);
 
+  // Notetaking state
+  const [routineNotes, setRoutineNotes] = useState([]);
+  const [noteText, setNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+
+  useEffect(() => {
+  if (!routineId) return;
+
+  const notesCol = collection(db, "routines", routineId, "routineNotes");
+  const q = query(notesCol, orderBy("createdAt", "desc"));
+
+  const unsub = onSnapshot(
+    q,
+    (snap) => {
+      const next = snap.docs.map((d) => ({
+        routineNoteId: d.id,
+        ...d.data(),
+      }));
+      setRoutineNotes(next);
+    },
+    (err) => {
+      console.log("routineNotes snapshot error:", err);
+      Alert.alert("Error", "Could not load notes.");
+    }
+  );
+
+  return unsub;
+}, [routineId]);
+
+const makeRoutineNoteId = () =>
+  `routineNote_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+const handleSaveNote = useCallback(async () => {
+  const clean = noteText.trim();
+  if (!clean || !routineId) return;
+
+  setSavingNote(true);
+  try {
+    const routineNoteId = makeRoutineNoteId();
+    const ref = doc(db, "routines", routineId, "routineNotes", routineNoteId);
+
+    await setDoc(ref, {
+      routineNoteId, // explicit field name as you want
+      text: clean,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    setNoteText("");
+  } catch (e) {
+    console.log(e);
+    Alert.alert("Error", "Could not save note.");
+  } finally {
+    setSavingNote(false);
+  }
+}, [noteText, routineId]);
+
+const handleDeleteNote = useCallback(
+  async (routineNoteId) => {
+    if (!routineId || !routineNoteId) return;
+    try {
+      await deleteDoc(doc(db, "routines", routineId, "routineNotes", routineNoteId));
+    } catch (e) {
+      console.log(e);
+      Alert.alert("Error", "Could not delete note.");
+    }
+  },
+  [routineId]
+);
+
+const handleEditNote = useCallback(
+  async (routineNoteId, newText) => {
+    const clean = newText.trim();
+    if (!routineId || !routineNoteId || !clean) return;
+
+    try {
+      await updateDoc(doc(db, "routines", routineId, "routineNotes", routineNoteId), {
+        text: clean,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.log(e);
+      Alert.alert("Error", "Could not edit note.");
+    }
+  },
+  [routineId]
+);
   // ------------------------
   // Firestore load by routineId
   // ------------------------
@@ -105,6 +203,7 @@ export default function PracticeSessionScreen({ navigation, route }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routineId]);
+
 
   // ------------------------
   // Normalisation helpers 
@@ -448,7 +547,16 @@ export default function PracticeSessionScreen({ navigation, route }) {
             }}
           />
 
-          <NotesCard notes={routine?.notes ?? []} isRunning={isRunning} />
+          <NotesCard  
+          notes={routineNotes}
+          noteText={noteText}
+          setNoteText={setNoteText}
+          onSave={handleSaveNote}
+          onDelete={handleDeleteNote}
+          onEdit={handleEditNote}
+          isRunning={isRunning}
+          saving={savingNote}
+          />
 
           <View style={{ height: 80 }} />
         </ScrollView>
@@ -692,25 +800,119 @@ function ResourcesCard({ isRunning, resources, onOpen }) {
   );
 }
 
-function NotesCard({ notes, isRunning }) {
+function NotesCard({ notes, noteText, setNoteText, onSave, onDelete, onEdit, isRunning, saving }) {
+  const [editingId, setEditingId] = useState(null);
+  const [editingText, setEditingText] = useState("");
+
+  const startEdit = (note) => {
+    const id = note?.routineNoteId ?? null;
+    if (!id) return;
+    setEditingId(id);
+    setEditingText(note?.text ?? "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingText("");
+  };
+
+  const saveEdit = async () => {
+    const clean = editingText.trim();
+    if (!clean || !editingId) return;
+    await onEdit(editingId, clean);
+    cancelEdit();
+  };
+
+  const confirmDelete = (note) => {
+    const id = note?.routineNoteId ?? null;
+    if (!id) return;
+
+    Alert.alert("Delete note?", "This will remove the note permanently.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => onDelete(id) },
+    ]);
+  };
+
   return (
     <View style={styles.card}>
       <Text style={styles.sectionTitle}>Routine Notes</Text>
       <Text style={styles.helperText}>
-        {isRunning ? "Pause to edit notes." : "Write reminders for next time (reflection phase)."}
+        {isRunning ? "Pause to write notes." : "Write reflections for next time."}
       </Text>
 
       <View style={styles.notesBox}>
         {notes?.length ? (
-          notes.map((n, i) => (
-            <Text key={`${n}-${i}`} style={styles.noteLine}>
-              • {n}
-            </Text>
-          ))
+          notes.map((n, i) => {
+            const id = n?.routineNoteId ?? `${i}`;
+            const isEditing = editingId === n?.routineNoteId;
+
+            return (
+              <View key={id} style={{ marginBottom: 10 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
+                  <View style={{ flex: 1 }}>
+                    {isEditing ? (
+                      <TextInput
+                        value={editingText}
+                        onChangeText={setEditingText}
+                        style={[styles.noteInput, { marginTop: 0, minHeight: 44 }]}
+                        multiline
+                      />
+                    ) : (
+                      <Text style={styles.noteLine}>• {n?.text ?? ""}</Text>
+                    )}
+                  </View>
+
+                  {!isRunning && (
+                    <View style={{ flexDirection: "row", gap: 10 }}>
+                      {isEditing ? (
+                        <>
+                          <TouchableOpacity onPress={saveEdit} style={{ padding: 6 }}>
+                            <Ionicons name="checkmark" size={20} color="#0f172a" />
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={cancelEdit} style={{ padding: 6 }}>
+                            <Ionicons name="close" size={20} color="#0f172a" />
+                          </TouchableOpacity>
+                        </>
+                      ) : (
+                        <>
+                          <TouchableOpacity onPress={() => startEdit(n)} style={{ padding: 6 }}>
+                            <Ionicons name="create-outline" size={20} color="#0f172a" />
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => confirmDelete(n)} style={{ padding: 6 }}>
+                            <Ionicons name="trash-outline" size={20} color="#8b3a3a" />
+                          </TouchableOpacity>
+                        </>
+                      )}
+                    </View>
+                  )}
+                </View>
+              </View>
+            );
+          })
         ) : (
           <Text style={styles.noteLine}>• No notes yet.</Text>
         )}
       </View>
+
+      {!isRunning && (
+        <>
+          <TextInput
+            style={styles.noteInput}
+            placeholder="Add a new note..."
+            value={noteText}
+            onChangeText={setNoteText}
+            multiline
+          />
+
+          <TouchableOpacity
+            style={[styles.primaryBtn, saving && { opacity: 0.7 }]}
+            onPress={onSave}
+            disabled={!noteText.trim() || saving}
+          >
+            <Text style={styles.primaryBtnText}>{saving ? "Saving..." : "Save Note"}</Text>
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 }
