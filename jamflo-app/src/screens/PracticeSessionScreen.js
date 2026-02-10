@@ -26,6 +26,7 @@ import {
 import { AppHeader } from "../components/AppHeader";
 import { BottomNav } from "../components/BottomNav";
 import { db } from "../config/firebaseConfig";
+import { useCountdownTimer } from "../hooks/useCountdownTimer";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const BOTTOM_NAV_HEIGHT = 72; 
@@ -334,6 +335,67 @@ const handleEditNote = useCallback(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [safeBlockIndex, safeExerciseIndex]);
 
+
+  // ------------------------
+  // Session controls (block-first)
+  // ------------------------
+
+  const durationMs = Math.round((currentExercise?.durationMins ?? 0) * 60 * 1000);
+
+  const handlePrev = () => {
+    if (isRunning) return;
+
+    // within block
+    if (safeExerciseIndex > 0) {
+      setCurrentExerciseIndex((v) => Math.max(0, v - 1));
+      setIsRunning(false);
+      return;
+    }
+
+    // move to previous block last exercise
+    if (safeBlockIndex > 0) {
+      const prevBlock = focusBlocks[safeBlockIndex - 1];
+      const prevLen = prevBlock?.exercises?.length || 0;
+
+      setCurrentBlockIndex((b) => Math.max(0, b - 1));
+      setCurrentExerciseIndex(Math.max(0, prevLen - 1));
+      setIsRunning(false);
+    }
+  };
+
+  const handleSkip = () => {
+    // within block
+    if (safeExerciseIndex < totalExercisesInBlock - 1) {
+      setCurrentExerciseIndex((v) => v + 1);
+      setIsRunning(false);
+      return;
+    }
+
+    // move to next block
+    if (safeBlockIndex < totalBlocks - 1) {
+      setCurrentBlockIndex((b) => b + 1);
+      setCurrentExerciseIndex(0);
+      setIsRunning(false);
+    }
+  };
+
+  const handleToggleRun = () => setIsRunning((v) => !v);
+
+  const { seconds, remainingMs } = useCountdownTimer({
+    durationMs,
+    isRunning,
+    onFinish: handleSkip,
+  });
+
+  const timerText = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+
+  const exerciseProgress = useMemo(() => {
+    if (!durationMs) return 0;
+    const done = 1 - remainingMs / durationMs;
+    return Math.max(0, Math.min(1, done));
+  }, [durationMs, remainingMs]);
+
+
   // ------------------------
   // Loading / error / empty
   // ------------------------
@@ -388,46 +450,6 @@ const handleEditNote = useCallback(
   const handleExit = () => navigation.goBack();
 
   // ------------------------
-  // Session controls (block-first)
-  // ------------------------
-  const handlePrev = () => {
-    if (isRunning) return;
-
-    // within block
-    if (safeExerciseIndex > 0) {
-      setCurrentExerciseIndex((v) => Math.max(0, v - 1));
-      return;
-    }
-
-    // move to previous block last exercise
-    if (safeBlockIndex > 0) {
-      const prevBlock = focusBlocks[safeBlockIndex - 1];
-      const prevLen = prevBlock?.exercises?.length || 0;
-
-      setCurrentBlockIndex((b) => Math.max(0, b - 1));
-      setCurrentExerciseIndex(Math.max(0, prevLen - 1));
-    }
-  };
-
-  const handleSkip = () => {
-    // within block
-    if (safeExerciseIndex < totalExercisesInBlock - 1) {
-      setCurrentExerciseIndex((v) => v + 1);
-      setIsRunning(false);
-      return;
-    }
-
-    // move to next block
-    if (safeBlockIndex < totalBlocks - 1) {
-      setCurrentBlockIndex((b) => b + 1);
-      setCurrentExerciseIndex(0);
-      setIsRunning(false);
-    }
-  };
-
-  const handleToggleRun = () => setIsRunning((v) => !v);
-
-  // ------------------------
   // Resources (ONLY openable ones)
   // ------------------------
   const resources = Array.isArray(currentExercise?.resources) ? currentExercise.resources : [];
@@ -447,6 +469,7 @@ const handleEditNote = useCallback(
     }
   };
 
+  
   // ------------------------
   // Render
   // ------------------------
@@ -500,6 +523,8 @@ const handleEditNote = useCallback(
             onPrev={handlePrev}
             onToggleRun={handleToggleRun}
             onSkip={handleSkip}
+            timerText={timerText}
+            progress={exerciseProgress}
           />
 
           <MetronomeCard
@@ -602,8 +627,10 @@ function ExerciseCard({
   onPrev,
   onToggleRun,
   onSkip,
+  timerText,
+  progress
 }) {
-  const timerText = "4:39"; // UI-only placeholder
+  
 
   return (
     <View style={[styles.card, styles.exerciseCard]}>
@@ -621,7 +648,7 @@ function ExerciseCard({
       <Text style={styles.timerSub}>{durationMins ?? 5} Minutes</Text>
 
       <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: "6%" }]} />
+        <View style={[styles.progressFill, { width: `${Math.round((progress ?? 0) * 100)}%`, opacity: isRunning ? 1 : 0.7 }]} />
       </View>
 
       <View style={styles.controlsRow}>
