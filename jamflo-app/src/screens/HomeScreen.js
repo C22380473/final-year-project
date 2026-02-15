@@ -18,7 +18,7 @@ import { collection, getDocs, doc, deleteDoc, query, orderBy, limit } from "fire
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, route }) {
   const [username, setUsername] = useState("User");
   const [routines, setRoutines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +71,7 @@ export default function HomeScreen({ navigation }) {
     const remainingMs = Number(data?.remainingMs ?? 0);
     const isCompleted = !!data?.completedAt;
 
-    if (!isCompleted && remainingMs > 0) setActiveSession({ id: d.id, ...data });
+    if (!isCompleted && remainingMs > 0) setActiveSession({ id: d.id,  routineId: data.routineId ?? d.id, ...data });
       else setActiveSession(null);
     }, []);
 
@@ -258,11 +258,11 @@ export default function HomeScreen({ navigation }) {
                   const user = auth.currentUser;
                     if (!user || !activeSession?.routineId) return;
 
-                    // Clear cloud resume
-                    await deleteDoc(doc(db, "users", user.uid, "activeSessions", activeSession.routineId));
+                    
 
                     // Clear local resume (matches PracticeSessionScreen sessionKey)
-                    await AsyncStorage.removeItem(`session:${activeSession.routineId}`);
+                    await AsyncStorage.removeItem(`activeSession:${user.uid}:${activeSession.routineId}`);
+
 
                     setActiveSession(null);
                 }}
