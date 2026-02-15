@@ -13,7 +13,9 @@ import { LoadingCard } from "../components/LoadingCard";
 import { StatsRow } from "../components/StatsRow";
 import { useRoutine } from "../contexts/RoutineContext";
 import { getUserRoutines, deleteRoutine } from "../services/routineService";
-import { auth } from "../config/firebaseConfig";
+import { auth, db } from "../config/firebaseConfig";
+import { collection, getDocs, doc, deleteDoc, query, orderBy, limit } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 export default function HomeScreen({ navigation }) {
@@ -21,6 +23,8 @@ export default function HomeScreen({ navigation }) {
   const [routines, setRoutines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeSession, setActiveSession] = useState(null);
+
 
   const { loadRoutine, resetRoutine } = useRoutine();
 
@@ -45,25 +49,48 @@ export default function HomeScreen({ navigation }) {
     }
     }, []);
 
+    const fetchActiveSession = useCallback(async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const q = query(
+      collection(db, "users", user.uid, "activeSessions"),
+      orderBy("updatedAtMs", "desc"),
+      limit(1)
+    );
+
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      setActiveSession(null);
+      return;
+    }
+
+    const d = snap.docs[0];
+    const data = d.data();
+    const remainingMs = Number(data?.remainingMs ?? 0);
+    const isCompleted = !!data?.completedAt;
+
+    if (!isCompleted && remainingMs > 0) setActiveSession({ id: d.id, ...data });
+      else setActiveSession(null);
+    }, []);
+
+    
     // Load user + routines on mount (first render)
     useEffect(() => {
       const user = auth.currentUser;
       if (user?.displayName) setUsername(user.displayName);
         fetchRoutines();
-    }, [fetchRoutines]);
+        fetchActiveSession();
+    }, [fetchRoutines, fetchActiveSession]);
 
     // Reload routines every time Home screen is focused
     useFocusEffect(
       useCallback(() => {
       fetchRoutines();
-      }, [fetchRoutines])
+      fetchActiveSession();
+      }, [fetchRoutines, fetchActiveSession])
     );
- 
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchRoutines();
-  };
 
   /** ROUTINE ACTION HANDLERS */
   const handleStartRoutine = (routine) => {
@@ -72,9 +99,17 @@ export default function HomeScreen({ navigation }) {
       "Ready to start practicing?",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Start Practice", onPress: () => navigation.navigate("PracticeSession", { routineId: routine?.routineId ?? routine?.id,}) },
+        { text: "Start Practice", onPress: () => 
+          navigation.navigate("PracticeSession", { routineId: routine?.routineId ?? routine?.id, 
+          startFresh: true,})},
       ]
     );
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchRoutines();
+    fetchActiveSession();
   };
 
   const handleViewDetails = (routine) => {
@@ -125,6 +160,8 @@ export default function HomeScreen({ navigation }) {
     resetRoutine();
     navigation.navigate("CreateRoutine");
   };
+
+
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
@@ -197,6 +234,45 @@ export default function HomeScreen({ navigation }) {
           />
         )}
 
+        {activeSession?.remainingMs > 0 && (
+          <View style={styles.resumeCard}>
+            <Text style={styles.resumeTitle}>Continue your last session?</Text>
+            <Text style={styles.resumeSub}>You were part-way through a routine.</Text>
+
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+              <TouchableOpacity
+                style={styles.resumeBtnPrimary}
+                onPress={() =>
+                  navigation.navigate("PracticeSession", {
+                    routineId: activeSession.routineId,
+                    startFresh: false,
+                  })
+                }
+              >
+                <Text style={styles.resumeBtnText}>Continue</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.resumeBtnSecondary}
+                onPress={async () => {
+                  const user = auth.currentUser;
+                    if (!user || !activeSession?.routineId) return;
+
+                    // Clear cloud resume
+                    await deleteDoc(doc(db, "users", user.uid, "activeSessions", activeSession.routineId));
+
+                    // Clear local resume (matches PracticeSessionScreen sessionKey)
+                    await AsyncStorage.removeItem(`session:${activeSession.routineId}`);
+
+                    setActiveSession(null);
+                }}
+              >
+                <Text style={styles.resumeBtnSecondaryText}>Clear</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* ROUTINE LIST */}
         {!loading &&
           routines.map((routine) => (
@@ -237,4 +313,44 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 4,
   },
+  resumeCard: {
+  backgroundColor: "#e8f4ff",
+  margin: 16,
+  padding: 16,
+  borderRadius: 14,
+},
+resumeTitle: {
+  fontSize: 18,
+  fontWeight: "700",
+},
+resumeSub: {
+  marginTop: 4,
+  color: "#555",
+},
+resumeBtnPrimary: {
+  flex: 1,
+  backgroundColor: "#218ED5",
+  padding: 12,
+  borderRadius: 10,
+  alignItems: "center",
+},
+resumeBtnText: {
+  color: "#fff",
+  fontWeight: "700",
+},
+resumeBtnSecondary: {
+  flex: 1,
+  backgroundColor: "#fff",
+  borderWidth: 1,
+  borderColor: "#218ED5",
+  padding: 12,
+  borderRadius: 10,
+  alignItems: "center",
+},
+resumeBtnSecondaryText: {
+  color: "#218ED5",
+  fontWeight: "700",
+},
+
 });
+

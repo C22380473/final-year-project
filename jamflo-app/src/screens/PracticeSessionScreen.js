@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AppState,
   Alert,
   Dimensions,
   Linking,
@@ -25,8 +26,9 @@ import {
 } from "react-native";
 import { AppHeader } from "../components/AppHeader";
 import { BottomNav } from "../components/BottomNav";
-import { db } from "../config/firebaseConfig";
 import { useCountdownTimer } from "../hooks/useCountdownTimer";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { auth, db } from "../config/firebaseConfig";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const BOTTOM_NAV_HEIGHT = 72; 
@@ -34,6 +36,8 @@ const BOTTOM_NAV_HEIGHT = 72;
 
 export default function PracticeSessionScreen({ navigation, route }) {
   const routineId = route?.params?.routineId;
+  const startFresh = route?.params?.startFresh === true;
+
 
   // Fallback routine for first render
   const fallbackRoutine = {
@@ -54,6 +58,10 @@ export default function PracticeSessionScreen({ navigation, route }) {
   const [currentBlockIndex, setCurrentBlockIndex] = useState(0);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [restoredRemainingMs, setRestoredRemainingMs] = useState(null);
+  const sessionCompletedRef = useRef(false);
+  const skipBeforeRemoveSaveRef = useRef(false);
+
 
   // Metronome UI state
   const [bpm, setBpm] = useState(60);
@@ -155,6 +163,8 @@ const handleEditNote = useCallback(
     const loadRoutineById = async () => {
       setLoadingRoutine(true);
       setLoadError(null);
+      sessionCompletedRef.current = false;
+
 
       if (!routineId) {
         setLoadingRoutine(false);
@@ -363,30 +373,94 @@ const handleEditNote = useCallback(
     }
   };
 
-  const handleSkip = () => {
-    // within block
-    if (safeExerciseIndex < totalExercisesInBlock - 1) {
-      setCurrentExerciseIndex((v) => v + 1);
-      setIsRunning(false);
-      return;
-    }
+  const sessionKey = routineId ? `session:${routineId}` : null;
+  const uid = auth.currentUser?.uid;
 
-    // move to next block
-    if (safeBlockIndex < totalBlocks - 1) {
-      setCurrentBlockIndex((b) => b + 1);
-      setCurrentExerciseIndex(0);
-      setIsRunning(false);
-    }
-  };
+  const sessionDocRef = useMemo(() => {
+    if (!uid || !routineId) return null;
+    return doc(db, "users", uid, "activeSessions", routineId);
+  }, [uid, routineId]);
+
+  const clearSavedSession = useCallback(async () => {
+  try {
+    if (sessionKey) await AsyncStorage.removeItem(sessionKey);
+  } catch (e) {
+    console.log("Failed to clear local session:", e);
+  }
+
+  try {
+    if (sessionDocRef) await deleteDoc(sessionDocRef);
+  } catch (e) {
+    console.log("Failed to delete cloud session:", e);
+  }
+
+  setRestoredRemainingMs(null);
+}, [sessionKey, sessionDocRef]);
+
+ const handleSkip = useCallback(async () => {
+  // safety: no exercises in this block
+  if (totalExercisesInBlock <= 0) return;
+
+  const isLastExerciseInLastBlock =
+    safeBlockIndex === totalBlocks - 1 &&
+    safeExerciseIndex === totalExercisesInBlock - 1;
+
+  if (isLastExerciseInLastBlock) {
+    sessionCompletedRef.current = true; 
+    setIsRunning(false);
+
+     if (sessionDocRef) {
+        try {
+          await setDoc(sessionDocRef, { remainingMs: 0, completedAt: serverTimestamp(), updatedAtMs: Date.now() }, { merge: true });
+        } catch (e) {
+          console.log("Failed to mark completed:", e);
+        }
+      }
+
+    await clearSavedSession();
+    Alert.alert("Session complete", "Nice one 🎸");
+    return;
+  }
+
+  // within block
+  if (safeExerciseIndex < totalExercisesInBlock - 1) {
+    setIsRunning(false);
+    setCurrentExerciseIndex((v) => v + 1);
+    return;
+  }
+
+  // move to next block
+  if (safeBlockIndex < totalBlocks - 1) {
+    setIsRunning(false);
+    setCurrentBlockIndex((b) => b + 1);
+    setCurrentExerciseIndex(0);
+    return;
+  }
+}, [
+  safeBlockIndex,
+  safeExerciseIndex,
+  totalBlocks,
+  totalExercisesInBlock,
+  clearSavedSession,
+]);
+
 
   const handleToggleRun = () => setIsRunning((v) => !v);
 
-  const { seconds, remainingMs } = useCountdownTimer({
+  const { seconds, remainingMs} = useCountdownTimer({
     durationMs,
+    initialRemainingMs: restoredRemainingMs ?? durationMs,
     isRunning,
     onFinish: handleSkip,
+    exerciseId: currentExercise?.id, // ✅ Force reset when exercise changes
   });
 
+  useEffect(() => {
+  if (restoredRemainingMs !== null) setRestoredRemainingMs(null);
+}, [safeBlockIndex, safeExerciseIndex, restoredRemainingMs]);
+
+ 
+  
   const timerText = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
   const exerciseProgress = useMemo(() => {
@@ -395,6 +469,109 @@ const handleEditNote = useCallback(
     return Math.max(0, Math.min(1, done));
   }, [durationMs, remainingMs]);
 
+  const buildSnapshot = useCallback(() => {
+    if (!routineId) return null;
+    return {
+      routineId,
+      blockIndex: safeBlockIndex,
+      exerciseIndex: safeExerciseIndex,
+      remainingMs,
+      bpm,
+      beats,
+      localUpdatedAtMs: Date.now(),
+      updatedAtMs: Date.now(),
+      updatedAt: serverTimestamp(), // server-authoritative last update
+    };
+  }, [routineId, safeBlockIndex, safeExerciseIndex, remainingMs, bpm, beats]);
+
+  const saveSession = useCallback(async () => {
+    if (sessionCompletedRef.current) return;
+
+    const snap = buildSnapshot();
+    if (!snap || !sessionKey) return;
+
+    // pause for safety
+    setIsRunning(false);
+
+    // local save (offline-first)
+    await AsyncStorage.setItem(sessionKey, JSON.stringify(snap));
+
+    // cloud save (best effort)
+    if (sessionDocRef) {
+      try {
+        await setDoc(sessionDocRef, snap, { merge: true });
+      } catch (e) {
+        console.log("Cloud save failed:", e);
+      }
+    }
+  }, [buildSnapshot, sessionKey, sessionDocRef]);
+
+  const restoreSession = useCallback(async () => {
+    if (!routineId || !sessionKey) return;
+
+    // 1) local
+    let local = null;
+    const raw = await AsyncStorage.getItem(sessionKey);
+    if (raw) local = JSON.parse(raw);
+
+    // 2) cloud
+    let cloud = null;
+    if (sessionDocRef) {
+      const cloudSnap = await getDoc(sessionDocRef);
+      if (cloudSnap.exists()) cloud = cloudSnap.data();
+    }
+
+    // 3) choose newest
+    const cloudMs = cloud?.updatedAt?.toMillis?.() ?? 0;
+    const localMs = local?.localUpdatedAtMs ?? 0;
+    const best = cloudMs > localMs ? cloud : local;
+    if (!best) return;
+
+    // apply (paused)
+    setIsRunning(false);
+    setCurrentBlockIndex(best.blockIndex ?? 0);
+    setCurrentExerciseIndex(best.exerciseIndex ?? 0);
+
+    // restore timer safely
+    setRestoredRemainingMs(
+      Number.isFinite(best.remainingMs) ? best.remainingMs : null
+    );
+  }, [routineId, sessionKey, sessionDocRef]);
+
+  // save on app background
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "background" ||  state === "inactive") saveSession();
+    });
+    return () => sub.remove();
+  }, [saveSession]);
+
+  // save on leaving screen
+  useEffect(() => {
+    const unsub = navigation.addListener("beforeRemove", () => {
+       if (skipBeforeRemoveSaveRef.current) {
+        skipBeforeRemoveSaveRef.current = false; // reset for next time
+      return;
+    }
+      saveSession();
+    });
+    return unsub;
+  }, [navigation, saveSession]);
+
+  // restore when routine is loaded
+  useEffect(() => {
+  if (loadingRoutine || loadError) return;
+
+  if (startFresh) {
+    // wipe any previous saved state, then stay at 0,0
+    clearSavedSession();
+    return;
+  }
+
+  restoreSession();
+}, [loadingRoutine, loadError, startFresh, restoreSession, clearSavedSession]);
+
+  
 
   // ------------------------
   // Loading / error / empty
@@ -447,7 +624,21 @@ const handleEditNote = useCallback(
     pagesRef.current?.scrollTo({ x: idx * SCREEN_W, animated: true });
   };
 
-  const handleExit = () => navigation.goBack();
+  const handleExit = async () => {
+    // stop beforeRemove from calling saveSession again
+    skipBeforeRemoveSaveRef.current = true;
+
+    setIsRunning(false);
+
+    if (sessionCompletedRef.current) {
+      // finished session => wipe it
+      await clearSavedSession();
+    } else {
+      // unfinished session => keep it to resume later
+      await saveSession();
+    }
+    navigation.goBack();
+  };
 
   // ------------------------
   // Resources (ONLY openable ones)
