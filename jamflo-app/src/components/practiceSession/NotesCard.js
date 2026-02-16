@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from "reac
 import { Ionicons } from "@expo/vector-icons";
 import { commonStyles } from "../../styles/common";
 
-export function NotesCard({ notes, noteText, setNoteText, onSave, onDelete, onEdit, isRunning, saving }) {
+export function NotesCard({ notes, noteText, setNoteText, onSave, onDelete, onEdit, saving }) {
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState("");
 
@@ -40,7 +40,7 @@ export function NotesCard({ notes, noteText, setNoteText, onSave, onDelete, onEd
     <View style={commonStyles.card}>
       <Text style={commonStyles.sectionTitle}>Routine Notes</Text>
       <Text style={commonStyles.helperText}>
-        {isRunning ? "Pause to write notes." : "Write reflections for next time."}
+        {"Write reflections for next time."}
       </Text>
 
       <View style={styles.notesBox}>
@@ -65,29 +65,28 @@ export function NotesCard({ notes, noteText, setNoteText, onSave, onDelete, onEd
                     )}
                   </View>
 
-                  {!isRunning && (
-                    <View style={{ flexDirection: "row", gap: 10 }}>
-                      {isEditing ? (
-                        <>
-                          <TouchableOpacity onPress={saveEdit} style={{ padding: 6 }}>
-                            <Ionicons name="checkmark" size={20} color="#0f172a" />
-                          </TouchableOpacity>
-                          <TouchableOpacity onPress={cancelEdit} style={{ padding: 6 }}>
-                            <Ionicons name="close" size={20} color="#0f172a" />
-                          </TouchableOpacity>
-                        </>
-                      ) : (
-                        <>
-                          <TouchableOpacity onPress={() => startEdit(n)} style={{ padding: 6 }}>
-                            <Ionicons name="create-outline" size={20} color="#0f172a" />
-                          </TouchableOpacity>
-                          <TouchableOpacity onPress={() => confirmDelete(n)} style={{ padding: 6 }}>
-                            <Ionicons name="trash-outline" size={20} color="#8b3a3a" />
-                          </TouchableOpacity>
-                        </>
-                      )}
-                    </View>
-                  )}
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    {isEditing ? (
+                      <>
+                        <TouchableOpacity onPress={saveEdit} style={{ padding: 6 }}>
+                          <Ionicons name="checkmark" size={20} color="#0f172a" />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={cancelEdit} style={{ padding: 6 }}>
+                          <Ionicons name="close" size={20} color="#0f172a" />
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <>
+                        <TouchableOpacity onPress={() => startEdit(n)} style={{ padding: 6 }}>
+                          <Ionicons name="create-outline" size={20} color="#0f172a" />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => confirmDelete(n)} style={{ padding: 6 }}>
+                          <Ionicons name="trash-outline" size={20} color="#8b3a3a" />
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+             
                 </View>
               </View>
             );
@@ -96,26 +95,25 @@ export function NotesCard({ notes, noteText, setNoteText, onSave, onDelete, onEd
           <Text style={styles.noteLine}>• No notes yet.</Text>
         )}
       </View>
+  
+      <>
+        <TextInput
+          style={styles.noteInput}
+          placeholder="Add a new note..."
+          value={noteText}
+          onChangeText={setNoteText}
+          multiline
+        />
 
-      {!isRunning && (
-        <>
-          <TextInput
-            style={styles.noteInput}
-            placeholder="Add a new note..."
-            value={noteText}
-            onChangeText={setNoteText}
-            multiline
-          />
-
-          <TouchableOpacity
-            style={[styles.primaryBtn, saving && { opacity: 0.7 }]}
-            onPress={onSave}
-            disabled={!noteText.trim() || saving}
-          >
-            <Text style={styles.primaryBtnText}>{saving ? "Saving..." : "Save Note"}</Text>
-          </TouchableOpacity>
-        </>
-      )}
+        <TouchableOpacity
+          style={[styles.primaryBtn, saving && { opacity: 0.7 }]}
+          onPress={onSave}
+          disabled={!noteText.trim() || saving}
+        >
+          <Text style={styles.primaryBtnText}>{saving ? "Saving..." : "Save Note"}</Text>
+        </TouchableOpacity>
+      </>
+  
     </View>
   );
 }
