@@ -8,6 +8,7 @@ export function useCountdownTimer({ durationMs, initialRemainingMs, isRunning, o
   const endAtRef = useRef(null);
   const intervalRef = useRef(null);
   const finishedRef = useRef(false);
+  const prevExerciseIdRef = useRef(exerciseId);
 
   // keep latest onFinish without making the interval effect re-run
   const onFinishRef = useRef(onFinish);
@@ -16,7 +17,6 @@ export function useCountdownTimer({ durationMs, initialRemainingMs, isRunning, o
   }, [onFinish]);
 
   // Reset whenever the exercise changes OR you provide a restored value
-  // exerciseId ensures reset even when durationMs stays the same
   useEffect(() => {
     const next = typeof initialRemainingMs === "number" ? initialRemainingMs : durationMs;
 
@@ -28,17 +28,32 @@ export function useCountdownTimer({ durationMs, initialRemainingMs, isRunning, o
     intervalRef.current = null;
   }, [durationMs, initialRemainingMs, exerciseId]);
 
-  // Start/stop ticking (DO NOT depend on remainingMs)
+  // Start/stop ticking
   useEffect(() => {
-    if (!isRunning) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+    // always clear any existing interval before possibly starting a new one
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
       intervalRef.current = null;
+    }
+
+    if (!isRunning) {
       endAtRef.current = null;
       return;
     }
 
-    // anchor once, using the current remainingMs at the moment we started
-    const startRemaining = remainingMs;
+    const exerciseChanged = prevExerciseIdRef.current !== exerciseId;
+    prevExerciseIdRef.current = exerciseId;
+
+    // If we just switched exercises while running, restart from the new exercise's starting time
+    const startRemaining = exerciseChanged
+      ? (typeof initialRemainingMs === "number" ? initialRemainingMs : durationMs)
+      : remainingMs;
+
+    if (exerciseChanged) {
+      finishedRef.current = false;
+      setRemainingMs(startRemaining); // ensures UI matches the new exercise immediately
+    }
+
     endAtRef.current = Date.now() + startRemaining;
 
     const tick = () => {
@@ -62,8 +77,7 @@ export function useCountdownTimer({ durationMs, initialRemainingMs, isRunning, o
       if (intervalRef.current) clearInterval(intervalRef.current);
       intervalRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRunning]); // only re-run when play/pause changes
+  }, [isRunning, exerciseId, durationMs, initialRemainingMs, remainingMs]);
 
   const seconds = Math.ceil(remainingMs / 1000);
   return { remainingMs, seconds, setRemainingMs };
