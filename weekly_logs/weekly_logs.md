@@ -247,3 +247,32 @@ Supervisor Meeting:
 - Complete note-taking functionality within the practice session.
 - Implement a session timer.
 - Add session state saving to allow users to resume practice sessions seamlessly.
+
+---
+
+### Week 3
+
+**Work Completed:**
+
+- Completed note-taking functionality within the practice session, allowing users to record and manage notes during active practice.
+- Implemented a session timer to track practice duration in real time.
+- Added session state saving, enabling users to leave and return to a session without losing progress.
+- Began refining how session data persists across app states to support smoother user experience.
+
+---
+
+**Meetings / Discussions:**
+
+- Met with the supervisor to provide an update on completed work.
+- Discussed priorities for the upcoming development phase and what features to focus on next.
+- Attempted to demonstrate progress but encountered college network restrictions affecting functionality.
+- Discussed using a React Native emulator for local testing to avoid network-related issues during future demonstrations.
+
+---
+
+**Plans for Next Week:**
+
+- Research metronome implementation approaches, comparing generated metronome code versus audio recordings (accuracy, timing precision and performance considerations).
+- Explore setting up the Firebase local emulator for improved offline and development testing.
+- Fix remaining session state bugs.
+- Refactor existing code into cleaner, modular components to improve maintainability and scalability.
