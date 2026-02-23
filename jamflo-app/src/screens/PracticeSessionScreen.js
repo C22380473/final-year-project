@@ -53,7 +53,7 @@ export default function PracticeSessionScreen(props) {
 
 
 function PracticeSessionInner({ navigation, route, userId}) {
-  console.log("PracticeSession params:", route?.params);
+  //console.log("PracticeSession params:", route?.params);
   const routineId = route?.params?.routineId;
   const startFresh = route?.params?.startFresh === true;
   const mode = startFresh ? "fresh" : "continue";

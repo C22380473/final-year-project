@@ -276,3 +276,27 @@ Supervisor Meeting:
 - Explore setting up the Firebase local emulator for improved offline and development testing.
 - Fix remaining session state bugs.
 - Refactor existing code into cleaner, modular components to improve maintainability and scalability.
+
+---
+### Week 4
+
+**Work Completed**
+
+- Researched metronome implementation approaches, comparing timing accuracy, performance stability and implementation complexity.
+- Updated the literature review to incorporate findings related to metronome accuracy and technical considerations.
+- Successfully set up and applied the Firebase local emulator to support stable development and testing without network restrictions.
+- Fixed a session state bug that occurred when users exited a session early, resolving timer inconsistencies and ensuring accurate state restoration.
+- Refactored existing code into cleaner, modular components, improving maintainability, readability and scalability of the practice session architecture.
+
+**Meetings / Discussions**
+
+- Met with the supervisor to discuss recent updates and overall project progress.
+Demonstrated the updated working prototype using the local emulator, successfully showcasing active session functionality.
+- Discussed which features to prioritise next.
+Reviewed strategies for further technical research and additional literature review integration.
+
+**Plans for Next Week**
+
+- Implement full metronome functionality within the practice session.
+- Add additional research notes and analysis to the literature review.
+- Continue updating the final report, integrating previously completed work into a structured draft.
