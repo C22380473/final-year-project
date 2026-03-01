@@ -1,36 +1,46 @@
 import { useEffect, useRef, useState } from "react";
-
-export function useCountdownTimer({ durationMs, initialRemainingMs, isRunning, onFinish, exerciseId }) {
+export function useCountdownTimer({
+  durationMs,
+  initialRemainingMs,
+  isRunning,
+  onFinish,
+  exerciseId,
+}) {
   const [remainingMs, setRemainingMs] = useState(
-    typeof initialRemainingMs === "number" ? initialRemainingMs : durationMs
+    typeof initialRemainingMs === "number" ? initialRemainingMs : durationMs,
   );
 
   const endAtRef = useRef(null);
   const intervalRef = useRef(null);
   const finishedRef = useRef(false);
-  const prevExerciseIdRef = useRef(exerciseId);
+  const prevExerciseRef = useRef(exerciseId);
 
-  // keep latest onFinish without making the interval effect re-run
+  // Keep latest onFinish without making the interval effect re-run
   const onFinishRef = useRef(onFinish);
-  useEffect(() => {
-    onFinishRef.current = onFinish;
-  }, [onFinish]);
+  useEffect(() => { onFinishRef.current = onFinish; }, [onFinish]);
 
-  // Reset whenever the exercise changes OR you provide a restored value
+  // Capture remainingMs in a ref so we can read it inside the effect
+  // without adding it to the dependency array
+  const remainingMsRef = useRef(remainingMs);
+  useEffect(() => { remainingMsRef.current = remainingMs; }, [remainingMs]);
+
+  // ── Reset when exercise changes or a restored value arrives ──────────────
   useEffect(() => {
-    const next = typeof initialRemainingMs === "number" ? initialRemainingMs : durationMs;
+    const next =
+      typeof initialRemainingMs === "number" ? initialRemainingMs : durationMs;
 
     setRemainingMs(next);
-    endAtRef.current = null;
-    finishedRef.current = false;
+    remainingMsRef.current = next;
+    endAtRef.current       = null;
+    finishedRef.current    = false;
 
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = null;
   }, [durationMs, initialRemainingMs, exerciseId]);
 
-  // Start/stop ticking
+  // ── Start / stop ticking ─────────────────────────────────────────────────
+  // FIX: `remainingMs` removed from deps — use remainingMsRef.current instead.
   useEffect(() => {
-    // always clear any existing interval before possibly starting a new one
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -41,28 +51,31 @@ export function useCountdownTimer({ durationMs, initialRemainingMs, isRunning, o
       return;
     }
 
-    const exerciseChanged = prevExerciseIdRef.current !== exerciseId;
-    prevExerciseIdRef.current = exerciseId;
+    const exerciseChanged = prevExerciseRef.current !== exerciseId;
+    prevExerciseRef.current = exerciseId;
 
-    // If we just switched exercises while running, restart from the new exercise's starting time
+    // If exercise just changed while running, restart from its full duration
     const startRemaining = exerciseChanged
-      ? (typeof initialRemainingMs === "number" ? initialRemainingMs : durationMs)
-      : remainingMs;
+      ? typeof initialRemainingMs === "number"
+        ? initialRemainingMs
+        : durationMs
+      : remainingMsRef.current; // ← read from ref, not state
 
     if (exerciseChanged) {
       finishedRef.current = false;
-      setRemainingMs(startRemaining); // ensures UI matches the new exercise immediately
+      setRemainingMs(startRemaining);
+      remainingMsRef.current = startRemaining;
     }
 
     endAtRef.current = Date.now() + startRemaining;
 
     const tick = () => {
       if (!endAtRef.current) return;
+      const next = Math.max(0, endAtRef.current - Date.now());
+      setRemainingMs(next);
+      remainingMsRef.current = next;
 
-      const nextRemaining = Math.max(0, endAtRef.current - Date.now());
-      setRemainingMs(nextRemaining);
-
-      if (nextRemaining === 0 && !finishedRef.current) {
+      if (next === 0 && !finishedRef.current) {
         finishedRef.current = true;
         if (intervalRef.current) clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -77,7 +90,9 @@ export function useCountdownTimer({ durationMs, initialRemainingMs, isRunning, o
       if (intervalRef.current) clearInterval(intervalRef.current);
       intervalRef.current = null;
     };
-  }, [isRunning, exerciseId, durationMs, initialRemainingMs, remainingMs]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRunning, exerciseId, durationMs, initialRemainingMs]);
+  // ↑ remainingMs intentionally omitted — we use remainingMsRef instead
 
   const seconds = Math.ceil(remainingMs / 1000);
   return { remainingMs, seconds, setRemainingMs };
