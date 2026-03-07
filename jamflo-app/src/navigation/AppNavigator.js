@@ -15,8 +15,8 @@ import AddFocusBlockScreen from '../screens/AddFocusBlockScreen';
 import RoutineEditorScreen from '../screens/RoutineEditorScreen';
 import CommunityTemplatesScreen from '../screens/CommunityTemplatesScreen';
 import PracticeSessionScreen from "../screens/PracticeSessionScreen";
-
-
+import ProfileScreen from "../screens/ProfileScreen";
+import { ensureUserProfile } from "../services/ensureUserProfile";
 
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../config/firebaseConfig";
@@ -42,6 +42,7 @@ export default function AppNavigator() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
+        await ensureUserProfile(currentUser); 
         const completed = await checkOnboardingStatus(currentUser.uid);
         setHasCompletedOnboarding(completed);
       } else {
@@ -89,6 +90,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Community" component={CommunityTemplatesScreen} />
             <Stack.Screen name="PracticeSession" component={PracticeSessionScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
 
 
           </>
@@ -101,6 +103,7 @@ export default function AppNavigator() {
             <Stack.Screen name="RoutineEditor" component={RoutineEditorScreen} />
             <Stack.Screen name="Community" component={CommunityTemplatesScreen} />
             <Stack.Screen name="PracticeSession" component={PracticeSessionScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
 
 
           </>

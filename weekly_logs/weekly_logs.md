@@ -300,3 +300,22 @@ Reviewed strategies for further technical research and additional literature rev
 - Implement full metronome functionality within the practice session.
 - Add additional research notes and analysis to the literature review.
 - Continue updating the final report, integrating previously completed work into a structured draft.
+
+---
+### Week 5
+
+**Work Completed:**
+- Implemented metronome functionality 
+- Added metronome UI: BPM slider, tempo presets, beat indicators, toggle control and stop button.
+- Integrated click and accent audio samples for strong/weak beat differentiation.
+- Fixed countdown timer bug 
+- Updated PracticeSession integration to support new metronome logic.
+- Resolved metronome restart issue caused by effect dependency changes resetting tick state.
+
+**Meetings / Discussions:**
+- Met with supervisor to review progress and demonstrate working metronome prototype.
+- Discussed next development focus: gamification features vs. user profile implementation.
+
+**Plans for Next Week:**
+- Fix remaining metronome issues.
+- Begin user profile implementation and setup.

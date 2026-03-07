@@ -5,7 +5,7 @@ import {
   initializeAuth,
   getReactNativePersistence,
   connectAuthEmulator,
-  getAuth, // ✅ ADD THIS
+  getAuth, 
 } from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
@@ -60,6 +60,6 @@ if (USE_EMULATORS && !globalThis.__FIREBASE_EMU_CONNECTED__) {
   connectAuthEmulator(auth, `http://${EMULATOR_HOST}:9099`, {
     disableWarnings: true,
   });
-  connectFirestoreEmulator(db, EMULATOR_HOST, 8087);
+  connectFirestoreEmulator(db, EMULATOR_HOST, 8083);
 }
 

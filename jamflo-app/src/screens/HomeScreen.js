@@ -293,6 +293,7 @@ export default function HomeScreen({ navigation, route }) {
         if (t === "Create") handleCreateRoutine();
         if (t === "Home") navigation.navigate("Home");
         if (t === "Community") navigation.navigate("Community");
+        if (t === "Profile") navigation.navigate("Profile");
       }} />
     </View>
   );

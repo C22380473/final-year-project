@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import Slider from "@react-native-community/slider";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";import Slider from "@react-native-community/slider";
 import { commonStyles } from "../../styles/common";
 
 const clamp   = (n, lo, hi) => Math.max(lo, Math.min(hi, n));

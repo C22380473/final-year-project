@@ -39,7 +39,6 @@ export function useCountdownTimer({
   }, [durationMs, initialRemainingMs, exerciseId]);
 
   // ── Start / stop ticking ─────────────────────────────────────────────────
-  // FIX: `remainingMs` removed from deps — use remainingMsRef.current instead.
   useEffect(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -90,9 +89,8 @@ export function useCountdownTimer({
       if (intervalRef.current) clearInterval(intervalRef.current);
       intervalRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, [isRunning, exerciseId, durationMs, initialRemainingMs]);
-  // ↑ remainingMs intentionally omitted — we use remainingMsRef instead
 
   const seconds = Math.ceil(remainingMs / 1000);
   return { remainingMs, seconds, setRemainingMs };

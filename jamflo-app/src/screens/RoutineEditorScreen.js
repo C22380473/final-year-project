@@ -237,6 +237,7 @@ export default function RoutineEditorScreen({ navigation }) {
           if (t === "Home") navigation.navigate("Home");
           if (t === "Create") navigation.navigate("CreateRoutine");
           if (t === "Community") navigation.navigate("Community");
+          if (t === "Profile") navigation.navigate("Profile");
         }}
         
       />

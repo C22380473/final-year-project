@@ -1,5 +1,8 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, updateDoc, where, runTransaction } from 'firebase/firestore';
+import { db, auth } from '../config/firebaseConfig';
+import * as ImagePicker from "expo-image-picker";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../config/firebaseConfig";
 
 const ROUTINES_COLLECTION = 'routines';
 
@@ -177,35 +180,58 @@ export const deleteRoutine = async (routineId) => {
 
 /**
  * Get public routines (for community feature)
- * @param {number} limit - Maximum number of routines to fetch
- * @returns {Promise<Object>} Result object with success status and routines array
+ * Optionally filter by a specific userId (for profile screen).
+ *
+ * Backward compatible:
+ * - getPublicRoutines(20)
+ * - getPublicRoutines({ max: 20, userId: "abc" })
+ *
+ * @param {number|{max?: number, userId?: string}} arg
+ * @returns {Promise<{success: boolean, routines: any[], error?: string, message?: string}>}
  */
-export const getPublicRoutines = async (max = 20) => {
+export const getPublicRoutines = async (arg = 20) => {
+  const opts =
+    typeof arg === "number"
+      ? { max: arg, userId: undefined }
+      : { max: arg?.max ?? 20, userId: arg?.userId };
+
+  const { max, userId } = opts;
+
   try {
-    const q = query(
-      collection(db, ROUTINES_COLLECTION),
+    const constraints = [
       where("isPrivate", "==", false),
       orderBy("updatedAt", "desc"),
-      limit(max)
-    );
+      limit(max),
+    ];
+
+    // If we want ONLY public routines for a specific user (Profile screen)
+    if (userId) {
+      constraints.unshift(where("userId", "==", userId));
+    }
+
+    const q = query(collection(db, ROUTINES_COLLECTION), ...constraints);
 
     const querySnapshot = await getDocs(q);
 
-    const routines = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
+    const routines = querySnapshot.docs.map((docSnap) => {
+      const data = docSnap.data();
       return {
-        routineId: doc.id,
-        id: doc.id,
+        routineId: docSnap.id,
+        id: docSnap.id,
         ...data,
-        createdAt: data.createdAt?.toDate(),
-        updatedAt: data.updatedAt?.toDate(),
+        createdAt: data.createdAt?.toDate?.() ?? null,
+        updatedAt: data.updatedAt?.toDate?.() ?? null,
       };
     });
 
-    console.log(`Retrieved ${routines.length} public routines`);
+    console.log(
+      `Retrieved ${routines.length} public routines${userId ? ` for user ${userId}` : ""}`
+    );
+
     return { success: true, routines };
   } catch (error) {
     console.error("Error getting public routines:", error);
+
     return {
       success: false,
       error: error.message,
@@ -252,6 +278,175 @@ export const duplicateRoutine = async (routineId, user) => {
 };
 
 
+
+function makeCommentId() {
+  return `c_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+export async function postRoutineComment(routineId, text) {
+  const user = auth.currentUser;
+  if (!user || !text?.trim()) return;
+
+  const commentId = makeCommentId();
+  const ref = doc(db, "routines", routineId, "comments", commentId);
+
+  await setDoc(ref, {
+    commentId,
+    routineId,
+    authorId: user.uid,
+    authorName: user.displayName || user.email?.split("@")[0] || "User",
+    authorPhotoURL: user.photoURL || "",
+    text: text.trim(),
+    likeCount: 0,
+    dislikeCount: 0,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+
+export async function reactToComment({ routineId, commentId, value }) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Not logged in");
+  if (![1, -1].includes(value)) throw new Error("Invalid reaction");
+
+  const commentRef = doc(db, "routines", routineId, "comments", commentId);
+  const reactionRef = doc(db, "routines", routineId, "comments", commentId, "reactions", user.uid);
+
+  await runTransaction(db, async (tx) => {
+    const commentSnap = await tx.get(commentRef);
+    if (!commentSnap.exists()) throw new Error("Comment missing");
+
+    const reactionSnap = await tx.get(reactionRef);
+    const prev = reactionSnap.exists() ? reactionSnap.data().value : 0;
+
+    // clicking same value again => undo (toggle off)
+    const next = prev === value ? 0 : value;
+
+    let likeDelta = 0;
+    let dislikeDelta = 0;
+
+    if (prev === 1) likeDelta -= 1;
+    if (prev === -1) dislikeDelta -= 1;
+    if (next === 1) likeDelta += 1;
+    if (next === -1) dislikeDelta += 1;
+
+    tx.set(reactionRef, { value: next, updatedAt: serverTimestamp() }, { merge: true });
+
+    const cur = commentSnap.data();
+    tx.update(commentRef, {
+      likeCount: Math.max(0, Number(cur.likeCount || 0) + likeDelta),
+      dislikeCount: Math.max(0, Number(cur.dislikeCount || 0) + dislikeDelta),
+      updatedAt: serverTimestamp(),
+    });
+  });
+}
+
+
+
+
+export async function rateRoutine({ routineId, value }) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Not logged in");
+  if (value < 1 || value > 5) throw new Error("Invalid rating");
+
+  const routineRef = doc(db, "routines", routineId);
+  const ratingRef = doc(db, "routines", routineId, "ratings", user.uid);
+
+  await runTransaction(db, async (tx) => {
+    const routineSnap = await tx.get(routineRef);
+    if (!routineSnap.exists()) throw new Error("Routine missing");
+
+    const prevSnap = await tx.get(ratingRef);
+    const prev = prevSnap.exists() ? Number(prevSnap.data().value || 0) : 0;
+
+    // write/update rating doc
+    tx.set(
+      ratingRef,
+      { value, updatedAt: serverTimestamp(), createdAt: prevSnap.exists() ? prevSnap.data().createdAt : serverTimestamp() },
+      { merge: true }
+    );
+
+    // Maintain sum + count on routine doc
+    // Add fields to routine doc: ratingSum, ratingCount, avgRating
+    const cur = routineSnap.data();
+    const ratingSum = Number(cur.ratingSum || 0);
+    const ratingCount = Number(cur.ratingCount || 0);
+
+    const nextSum = ratingSum - (prev || 0) + value;
+    const nextCount = prev ? ratingCount : ratingCount + 1;
+    const nextAvg = nextCount ? nextSum / nextCount : 0;
+
+    tx.update(routineRef, {
+      ratingSum: nextSum,
+      ratingCount: nextCount,
+      avgRating: nextAvg,
+      updatedAt: serverTimestamp(),
+    });
+  });
+}
+
+
+export async function updateUserProfile({ uid, username, displayName, photoURL }) {
+  if (!uid) return { success: false, message: "No user id" };
+
+  try {
+    await setDoc(
+      doc(db, "users", uid),
+      {
+        ...(username !== undefined ? { username } : {}),
+        ...(displayName !== undefined ? { displayName } : {}),
+        ...(photoURL !== undefined ? { photoURL } : {}),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    return { success: true };
+  } catch (e) {
+    console.log("updateUserProfile error", e);
+    return { success: false, message: e?.message || "Failed to update profile" };
+  }
+}
+
+
+export async function getUserProfile(userId) {
+  try {
+    const snap = await getDoc(doc(db, "users", userId));
+    if (!snap.exists()) return { success: false, message: "No profile" };
+    return { success: true, profile: snap.data() };
+  } catch (e) {
+    console.log("getUserProfile error", e);
+    return { success: false, message: e?.message || "Failed to load profile" };
+  }
+}
+
+async function uploadProfilePhoto({ uid }) {
+  // pick image
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.8,
+  });
+
+  if (result.canceled) return { success: false, canceled: true };
+
+  const uri = result.assets[0].uri;
+
+  // convert to blob
+  const response = await fetch(uri);
+  const blob = await response.blob();
+
+  // upload
+  const path = `profilePhotos/${uid}.jpg`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, blob);
+
+  const url = await getDownloadURL(storageRef);
+  return { success: true, url };
+}
+
 export default {
   createRoutine,
   getUserRoutines,
@@ -259,5 +454,11 @@ export default {
   updateRoutine,
   deleteRoutine,
   getPublicRoutines,
-  duplicateRoutine
+  duplicateRoutine,
+  reactToComment,
+  rateRoutine,
+  postRoutineComment,
+  updateUserProfile,
+  getUserProfile,
+  uploadProfilePhoto
 };

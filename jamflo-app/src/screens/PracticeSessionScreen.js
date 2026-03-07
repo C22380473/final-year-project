@@ -19,7 +19,6 @@ import { useRoutineNotes } from "../hooks/useRoutineNotes";
 import { useSessionPersistence } from "../hooks/useSessionPersistence";
 import { useExerciseNavigator } from "../hooks/useExerciseNavigator";
 import {useMetronome } from "../hooks/useMetronome";
-
 import { OverallProgressCard } from "../components/practiceSession/OverallProgressCard";
 import { SessionExerciseCard } from "../components/practiceSession/SessionExerciseCard";
 import { MetronomeCard } from "../components/practiceSession/MetronomeCard";
@@ -69,8 +68,6 @@ function PracticeSessionInner({ navigation, route, userId }) {
   const [beatsPerBar, setBeatsPerBar] = useState(4);
   const [metronomeEnabled, setMetronomeEnabled] = useState(true);
   const [currentBeat0, setCurrentBeat0] = useState(0);
-
-  
 
   // Metronome runs independently of practice timer:
   // - it plays when metronomeEnabled is ON AND isRunning is true
