@@ -27,6 +27,13 @@ export const CommunityRoutineCard = ({
   onDeleteComment,   // (commentId) => Promise<void>
 }) => {
   const focusBlocks = routine.focusBlocks || [];
+  const authorLabel =
+    routine.authorDisplayName ||
+    routine.displayName ||
+    routine.authorName ||
+    routine.authorUsername ||
+    routine.username ||
+    "Anonymous";
 
   // Inline edit state
   const [editingId, setEditingId] = useState(null);

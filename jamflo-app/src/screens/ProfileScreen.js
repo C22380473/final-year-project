@@ -5,7 +5,7 @@ import { AppHeader } from "../components/AppHeader";
 import { BottomNav } from "../components/BottomNav";
 import { auth, db} from "../config/firebaseConfig";
 import { CommunityRoutineCard } from "../components/CommunityRoutineCard";
-import { getPublicRoutines } from "../services/routineService";
+import { getPublicRoutines, updateUserProfile, uploadProfilePhoto } from "../services/routineService";
 import { useRoutineComments } from "../hooks/useRoutineComments";
 import { rateRoutine, reactToComment } from "../services/routineService";
 import { doc, onSnapshot, getDoc } from "firebase/firestore";
@@ -198,7 +198,7 @@ export default function ProfileScreen({ navigation, route }) {
   }
 }, []);
 
- const handleSaveProfile = useCallback(async () => {
+const handleSaveProfile = useCallback(async () => {
   const uid = auth.currentUser?.uid;
   if (!uid) return;
 
@@ -211,8 +211,23 @@ export default function ProfileScreen({ navigation, route }) {
     displayName: cleanDisplay,
   });
 
-  if (res.success) Alert.alert("Saved", "Profile updated.");
-  else Alert.alert("Error", res.message || "Could not save profile.");
+  if (res.success) {
+    setUsername(cleanUsername);
+    setDisplayName(cleanDisplay);
+
+    setPublicRoutines((prev) =>
+      prev.map((routine) => ({
+        ...routine,
+        username: cleanUsername,
+        displayName: cleanDisplay,
+        authorName: cleanDisplay || cleanUsername,
+      }))
+    );
+
+    Alert.alert("Saved", "Profile updated.");
+  } else {
+    Alert.alert("Error", res.message || "Could not save profile.");
+  }
 }, [username, displayName]);
 
   return (
@@ -241,19 +256,39 @@ export default function ProfileScreen({ navigation, route }) {
           <Text style={styles.handleText}>@{username}</Text>
 
           {isOwner ? (
-            <View style={styles.displayNameRow}>
-              <TextInput
-                value={displayName}
-                onChangeText={setDisplayName}
-                placeholder="Add display name (optional)"
-                style={styles.displayNameInput}
-              />
-              <TouchableOpacity style={styles.saveMiniBtn} onPress={handleSaveProfile}>
-                <Ionicons name="checkmark" size={18} color="#fff" />
-              </TouchableOpacity>
+            <View style={styles.displayNameEditorWrap}>
+              <View style={styles.displayNameHeaderRow}>
+                <View style={styles.displayNamePreviewBlock}>
+                  <Text style={styles.displayNamePreviewLabel}>Shown to others</Text>
+                  <Text style={styles.displayNamePreviewText}>
+                    {displayName.trim() || username}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.inputLabel}>Display name</Text>
+
+              <View style={styles.displayNameRow}>
+                <View style={styles.displayNameInputWrap}>
+                  <Ionicons name="create-outline" size={16} color="#666" style={styles.displayNameInputIcon} />
+                  <TextInput
+                    value={displayName}
+                    onChangeText={setDisplayName}
+                    placeholder="Enter display name"
+                    style={styles.displayNameInput}
+                    returnKeyType="done"
+                    onSubmitEditing={handleSaveProfile}
+                  />
+                </View>
+                <TouchableOpacity style={styles.saveMiniBtn} onPress={handleSaveProfile}>
+                  <Ionicons name="checkmark" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.inputHint}>Updates your profile and community routine cards.</Text>
             </View>
           ) : (
-            <Text style={{ marginTop: 10, fontSize: 16, fontWeight: "700", color: "#111" }}>
+            <Text style={styles.publicDisplayName}>
               {displayName || username}
             </Text>
           )}
@@ -285,13 +320,22 @@ export default function ProfileScreen({ navigation, route }) {
         {loading && <Text style={{ color: "#666" }}>Loading...</Text>}
 
         {(publicRoutines || []).map((routine) => {
-            const routineId = routine.routineId || routine.id;
-            const canRate = !!viewerId && routine.userId !== viewerId;
+  const routineId = routine.routineId || routine.id;
+  const canRate = !!viewerId && routine.userId !== viewerId;
 
+  const liveAuthorName =
+    isOwner && routine.userId === viewerId
+      ? (displayName || username)
+      : (routine.displayName || routine.authorName || routine.username || "Anonymous");
             return (
               <View key={routineId} style={{ marginBottom: 4 }}>
                 <PublicRoutineRow
-                  routine={routine}
+                  routine={{
+                    ...routine,
+                    authorName: liveAuthorName,
+                    displayName: liveAuthorName,
+                    username: routine.username || username,
+                  }}
                   navigation={navigation}
                   viewerId={viewerId}
                   canRate={canRate}
@@ -352,19 +396,56 @@ const styles = StyleSheet.create({
 
   handleText: { marginTop: 10, fontSize: 14, fontWeight: "800", color: "#218ED5" },
 
-  displayNameRow: { flexDirection: "row", alignItems: "center", marginTop: 10, width: "100%" },
-  displayNameInput: {
+  displayNameEditorWrap: { marginTop: 10, width: "100%" },
+  displayNameHeaderRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  displayNamePreviewBlock: { alignItems: "center" },
+  displayNamePreviewLabel: { fontSize: 11, fontWeight: "700", color: "#777", textTransform: "uppercase", letterSpacing: 0.4 },
+  displayNamePreviewText: { marginTop: 2, fontSize: 18, fontWeight: "800", color: "#111" },
+  publicDisplayName: { marginTop: 10, fontSize: 16, fontWeight: "700", color: "#111" },
+
+  inputLabel: {
+    width: "100%",
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 6,
+  },
+  inputHint: {
+    width: "100%",
+    fontSize: 12,
+    color: "#777",
+    marginTop: 6,
+    textAlign: "left",
+  },
+  displayNameRow: { flexDirection: "row", alignItems: "center", width: "100%" },
+  displayNameInputWrap: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#F7F7F7",
     borderRadius: 12,
-    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#EDEDED",
     paddingHorizontal: 12,
+    minHeight: 44,
+  },
+  displayNameInputIcon: { marginRight: 8 },
+  displayNameInput: {
+    flex: 1,
+    paddingVertical: 10,
     fontSize: 14,
+    color: "#111",
   },
   saveMiniBtn: {
     marginLeft: 8,
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     backgroundColor: "#13B4B0",
     alignItems: "center",

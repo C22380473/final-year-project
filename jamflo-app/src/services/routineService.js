@@ -1,5 +1,6 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, updateDoc, where, runTransaction } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, updateDoc, where, runTransaction, setDoc, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../config/firebaseConfig';
+import { updateProfile } from 'firebase/auth';
 import * as ImagePicker from "expo-image-picker";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../config/firebaseConfig";
@@ -391,18 +392,47 @@ export async function updateUserProfile({ uid, username, displayName, photoURL }
   if (!uid) return { success: false, message: "No user id" };
 
   try {
+    const cleanUsername = username !== undefined ? String(username || "").trim().replace(/^@+/, "") : undefined;
+    const cleanDisplayName = displayName !== undefined ? String(displayName || "").trim() : undefined;
+    const publicName = cleanDisplayName || cleanUsername || "Anonymous";
+
     await setDoc(
       doc(db, "users", uid),
       {
-        ...(username !== undefined ? { username } : {}),
-        ...(displayName !== undefined ? { displayName } : {}),
+        ...(cleanUsername !== undefined ? { username: cleanUsername } : {}),
+        ...(cleanDisplayName !== undefined ? { displayName: cleanDisplayName } : {}),
         ...(photoURL !== undefined ? { photoURL } : {}),
         updatedAt: serverTimestamp(),
       },
       { merge: true }
     );
 
-    return { success: true };
+    if (auth.currentUser?.uid === uid) {
+      await updateProfile(auth.currentUser, {
+        ...(cleanDisplayName !== undefined ? { displayName: publicName } : {}),
+        ...(photoURL !== undefined ? { photoURL } : {}),
+      });
+    }
+
+    const routinesSnap = await getDocs(
+      query(collection(db, ROUTINES_COLLECTION), where("userId", "==", uid))
+    );
+
+    if (!routinesSnap.empty) {
+      const batch = writeBatch(db);
+      routinesSnap.forEach((routineDoc) => {
+        batch.update(routineDoc.ref, {
+          authorName: publicName,
+          authorDisplayName: cleanDisplayName || "",
+          authorUsername: cleanUsername || "",
+          ...(photoURL !== undefined ? { authorPhotoURL: photoURL } : {}),
+          updatedAt: serverTimestamp(),
+        });
+      });
+      await batch.commit();
+    }
+
+    return { success: true, publicName };
   } catch (e) {
     console.log("updateUserProfile error", e);
     return { success: false, message: e?.message || "Failed to update profile" };
