@@ -13,6 +13,8 @@ import { doc, onSnapshot, getDoc } from "firebase/firestore";
 
 function PublicRoutineRow({ routine, navigation, canRate, viewerId, onViewDetails }) {
   const routineId = routine.routineId || routine.id;
+  const currentUserId = auth.currentUser?.uid || null;
+  const isRoutineOwner = routine.userId === currentUserId;
 
   const { comments, newComment, setNewComment, postComment, deleteComment, editComment } =
     useRoutineComments(routineId);
@@ -68,6 +70,8 @@ function PublicRoutineRow({ routine, navigation, canRate, viewerId, onViewDetail
       avgRating={Number(routine.avgRating || 0)}
       ratingCount={Number(routine.ratingCount || 0)}
 
+      
+      isRoutineOwner={isRoutineOwner}
       comments={comments}
       newComment={newComment}
       onChangeComment={setNewComment}

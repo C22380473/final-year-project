@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { auth } from "../config/firebaseConfig";
 
@@ -20,9 +20,37 @@ export function useRoutineComments(routineId) {
     if (!colRef) return;
 
     const q = query(colRef, orderBy("createdAt", "desc"));
-    return onSnapshot(q, (snap) => {
-      const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setComments(rows);
+    return onSnapshot(q, async (snap) => {
+      const rows = await Promise.all(
+          snap.docs.map(async (d) => {
+            const data = d.data();
+            let authorNameResolved = data.authorName || "User";
+
+            if (data.authorId) {
+              try {
+                const userSnap = await getDoc(doc(db, "users", data.authorId));
+                if (userSnap.exists()) {
+                  const profile = userSnap.data();
+                  authorNameResolved =
+                    profile.displayName?.trim() ||
+                    profile.username?.trim() ||
+                    data.authorName ||
+                    "User";
+                }
+              } catch (e) {
+                console.log("comment author lookup failed", e);
+              }
+            }
+
+            return {
+              id: d.id,
+              ...data,
+              authorNameResolved,
+            };
+          })
+        );
+
+        setComments(rows);
     });
   }, [colRef]);
 
@@ -38,7 +66,7 @@ export function useRoutineComments(routineId) {
       commentId,
       routineId,
       authorId: user.uid,
-      authorName: user.displayName || "Anonymous",
+      authorName: user.displayName || user.email?.split("@")[0] || "Anonymous",
       authorPhotoURL: user.photoURL || "",
       text,
       likeCount: 0,

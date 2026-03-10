@@ -31,6 +31,7 @@ function RoutineCardRow({ routine, navigation, onSaveRoutine, onViewDetails,  on
     useRoutineComments(routineId);
 
   const currentUserId = auth.currentUser?.uid || null;
+  const isRoutineOwner = routine.userId === currentUserId;
 
   const [userRating, setUserRating] = React.useState(0);
 
@@ -126,6 +127,7 @@ function RoutineCardRow({ routine, navigation, onSaveRoutine, onViewDetails,  on
       onRate={handleRate}
 
       currentUserId={currentUserId}
+      isRoutineOwner={isRoutineOwner}
       onDeleteComment={deleteComment}
       onEditComment={editComment}
     />

@@ -25,6 +25,8 @@ export const CommunityRoutineCard = ({
   currentUserId,
   onEditComment,     // (commentId, nextText) => Promise<void>
   onDeleteComment,   // (commentId) => Promise<void>
+
+  isRoutineOwner = false,
 }) => {
   const focusBlocks = routine.focusBlocks || [];
   const authorLabel =
@@ -65,7 +67,7 @@ export const CommunityRoutineCard = ({
         <TouchableOpacity onPress={() => onPressAuthor?.(routine.authorId || routine.userId)}>
           <View style={styles.inlineItem}>
             <Ionicons name="person" size={16} color="#218ED5" />
-            <Text style={styles.inlineText}>{routine.authorName || "Anonymous"}</Text>
+            <Text style={styles.inlineText}>{authorLabel}</Text>
           </View>
         </TouchableOpacity>
 
@@ -127,12 +129,13 @@ export const CommunityRoutineCard = ({
             {comments.slice(0, 6).map((c, idx) => {
               const id = c.commentId || c.id || `c-${idx}`;
               const isMine = currentUserId && c.authorId === currentUserId;
+              const canDelete = isMine || isRoutineOwner;
               const isEditing = editingId === id;
 
               return (
                 <View key={id} style={styles.commentItem}>
                   <View style={styles.commentHeader}>
-                    <Text style={styles.commentAuthor}>{c.authorName || "User"}</Text>
+                    <Text style={styles.commentAuthor}>{c.authorNameResolved || "User"}</Text>
                     {!!c.createdAtText && <Text style={styles.commentDate}>{c.createdAtText}</Text>}
                   </View>
 
@@ -169,14 +172,19 @@ export const CommunityRoutineCard = ({
                       <Text style={styles.reactCount}>{Number(c.dislikeCount || 0)}</Text>
                     </TouchableOpacity>
 
-                    {isMine && !isEditing && (
+                    {!isEditing && (isMine || canDelete) && (
                       <View style={styles.ownerBtns}>
-                        <TouchableOpacity onPress={() => startEdit(c)} style={styles.ownerBtn}>
-                          <Text style={styles.ownerBtnTextBlue}>Edit</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => onDeleteComment?.(id)} style={styles.ownerBtn}>
-                          <Text style={styles.ownerBtnTextRed}>Delete</Text>
-                        </TouchableOpacity>
+                        {isMine && (
+                          <TouchableOpacity onPress={() => startEdit(c)} style={styles.ownerBtn}>
+                            <Text style={styles.ownerBtnTextBlue}>Edit</Text>
+                          </TouchableOpacity>
+                        )}
+
+                        {canDelete && (
+                          <TouchableOpacity onPress={() => onDeleteComment?.(id)} style={styles.ownerBtn}>
+                            <Text style={styles.ownerBtnTextRed}>Delete</Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
                     )}
                   </View>
