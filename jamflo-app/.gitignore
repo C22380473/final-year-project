@@ -5,6 +5,7 @@ node_modules/
 
 # Expo
 .expo/
+.expo-shared/
 dist/
 web-build/
 expo-env.d.ts
@@ -34,6 +35,8 @@ yarn-error.*
 .env.*.local
 .env
 .env.local
+backend/.env
+
 # typescript
 *.tsbuildinfo
 
@@ -47,3 +50,8 @@ firebase-debug.*.log
 firestore-debug.log
 firestore-debug.*.log
 emulator-data/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
