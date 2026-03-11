@@ -60,6 +60,6 @@ if (USE_EMULATORS && !globalThis.__FIREBASE_EMU_CONNECTED__) {
   connectAuthEmulator(auth, `http://${EMULATOR_HOST}:9099`, {
     disableWarnings: true,
   });
-  connectFirestoreEmulator(db, EMULATOR_HOST, 8084);
+  connectFirestoreEmulator(db, EMULATOR_HOST, 8085);
 }
 

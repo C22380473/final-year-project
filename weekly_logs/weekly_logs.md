@@ -336,3 +336,33 @@ Reviewed strategies for further technical research and additional literature rev
 * Research and attempt to develop an API solution for profile picture upload and storage.
 
 ---
+### Week 7
+
+**Work Completed:**
+
+* Implemented dynamic display name functionality across the application.
+* Fixed author/display name synchronization in routines and comments.
+* Added functionality allowing routine owners to delete comments on their routines.
+* Implemented profile picture support for user profiles.
+* Researched and developed an API-based approach for profile picture upload and storage.
+
+**Meetings / Discussions:**
+
+* Met with supervisor to review project progress and recent feature updates.
+* Discussed priorities for upcoming features and overall project direction.
+* Explored potential approaches for implementing gamification.
+* Reviewed plans for updating the project report.
+* Outlined the development strategy for the final weeks of the project.
+
+**Plans for Next Week:**
+
+Community Features:
+- Implement comment text parsing to filter inappropriate content.
+- Add search and filtering functionality.
+
+Gamification:
+- Research potential gamification features and implementation approaches.
+
+Documentation:
+- Continue updating and refining the project report.
+
