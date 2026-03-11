@@ -20,7 +20,7 @@
 
 --- 
 
-#### Week 4 
+### Week 4
 
 **Work Completed:**
 - Finalised proposal draft, including Deliverables, Project Schedule and Conclusion sections.  
@@ -231,16 +231,12 @@ Supervisor Meeting:
 - Implemented adding a resource functionality
 - Completed brief research into metronome implementation options.
 
----
-
 **Meetings / Discussions:**
 
 - Met with the supervisor to discuss the updated project timeline and prioritisation of upcoming features.
 - Agreed on a focused action plan for the next development phase.
 - Discussed the potential to expand literature review content in future, particularly around gamification, user profiles and motivational design.
 - Selected three priority tasks to complete in the coming week.
-
----
 
 **Plans for Next Week:**
 
@@ -259,16 +255,12 @@ Supervisor Meeting:
 - Added session state saving, enabling users to leave and return to a session without losing progress.
 - Began refining how session data persists across app states to support smoother user experience.
 
----
-
 **Meetings / Discussions:**
 
 - Met with the supervisor to provide an update on completed work.
 - Discussed priorities for the upcoming development phase and what features to focus on next.
 - Attempted to demonstrate progress but encountered college network restrictions affecting functionality.
 - Discussed using a React Native emulator for local testing to avoid network-related issues during future demonstrations.
-
----
 
 **Plans for Next Week:**
 
@@ -319,3 +311,28 @@ Reviewed strategies for further technical research and additional literature rev
 **Plans for Next Week:**
 - Fix remaining metronome issues.
 - Begin user profile implementation and setup.
+
+---
+### Week 6
+
+**Work Completed:**
+
+* Developed and implemented the Profile Screen UI.
+* Implemented star rating functionality for routines.
+* Added comment interaction features (like and dislike).
+* Updated and improved the Routine Card UI for better usability and visual consistency.
+* Fixed metronome audio bug affecting Android devices.
+
+**Meetings / Discussions:**
+
+* Met with supervisor to demonstrate the Android metronome audio fix and updated UI changes.
+* Discussed challenges with implementing profile picture uploads using Firestore storage.
+* Explored alternative approaches, including creating an API for image storage and retrieval.
+* Discussed potential implementation of comment parsing or filtering to prevent inappropriate content.
+
+**Plans for Next Week:**
+
+* Implement functionality allowing routine owners to delete comments.
+* Research and attempt to develop an API solution for profile picture upload and storage.
+
+---
