@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, orderBy, query, deleteDoc, updateDoc } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { auth } from "../config/firebaseConfig";
+import { postRoutineComment as postRoutineCommentService, getProfilePhotoViewUrl } from "../services/routineService";
 
 function makeCommentId() {
   return `c_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -25,17 +26,30 @@ export function useRoutineComments(routineId) {
           snap.docs.map(async (d) => {
             const data = d.data();
             let authorNameResolved = data.authorName || "User";
+            let authorPhotoResolved = data.authorPhotoURL || "";
 
             if (data.authorId) {
               try {
                 const userSnap = await getDoc(doc(db, "users", data.authorId));
                 if (userSnap.exists()) {
                   const profile = userSnap.data();
+
                   authorNameResolved =
-                    profile.displayName?.trim() ||
-                    profile.username?.trim() ||
+                    String(profile.displayName || "").trim() ||
+                    String(profile.username || "").trim() ||
                     data.authorName ||
                     "User";
+
+                  if (!authorPhotoResolved) {
+                    if (profile.photo?.key) {
+                      const view = await getProfilePhotoViewUrl(profile.photo);
+                      if (view.success) {
+                        authorPhotoResolved = view.url;
+                      }
+                    } else {
+                      authorPhotoResolved = profile.photoURL || "";
+                    }
+                  }
                 }
               } catch (e) {
                 console.log("comment author lookup failed", e);
@@ -46,6 +60,7 @@ export function useRoutineComments(routineId) {
               id: d.id,
               ...data,
               authorNameResolved,
+              authorPhotoURL: authorPhotoResolved || data.authorPhotoURL || "",
             };
           })
         );
@@ -55,26 +70,10 @@ export function useRoutineComments(routineId) {
   }, [colRef]);
 
   const postComment = useCallback(async () => {
-    const user = auth.currentUser;
     const text = newComment.trim();
-    if (!user || !routineId || !text) return;
+    if (!routineId || !text) return;
 
-    const commentId = makeCommentId();
-    const ref = doc(db, "routines", routineId, "comments", commentId);
-
-    await setDoc(ref, {
-      commentId,
-      routineId,
-      authorId: user.uid,
-      authorName: user.displayName || user.email?.split("@")[0] || "Anonymous",
-      authorPhotoURL: user.photoURL || "",
-      text,
-      likeCount: 0,
-      dislikeCount: 0,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-
+    await postRoutineCommentService(routineId, text);
     setNewComment("");
   }, [newComment, routineId]);
 

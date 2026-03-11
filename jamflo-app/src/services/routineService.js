@@ -2,10 +2,39 @@ import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, qu
 import { db, auth } from '../config/firebaseConfig';
 import { updateProfile } from 'firebase/auth';
 import * as ImagePicker from "expo-image-picker";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../config/firebaseConfig";
 
 const ROUTINES_COLLECTION = 'routines';
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+if (!API_BASE_URL) {
+  throw new Error("Missing EXPO_PUBLIC_API_BASE_URL");
+}
+
+
+function resolvePublicName(profile = {}) {
+  const displayName = String(profile.displayName || "").trim();
+  const username = String(profile.username || "").trim().replace(/^@+/, "");
+  return displayName || username || "User";
+}
+
+
+async function getCurrentUserProfile() {
+  const user = auth.currentUser;
+  if (!user?.uid) return null;
+
+  const snap = await getDoc(doc(db, "users", user.uid));
+  if (!snap.exists()) {
+    return {
+      uid: user.uid,
+      username: user.email?.split("@")[0] || "user",
+      displayName: "",
+      photoURL: user.photoURL || "",
+    };
+  }
+
+  return snap.data();
+}
+
 
 /**
  * Create a new routine in Firestore
@@ -15,29 +44,46 @@ const ROUTINES_COLLECTION = 'routines';
  */
 export const createRoutine = async (userId, routineData) => {
   try {
-    // Prepare routine data with timestamps
+    const profileSnap = await getDoc(doc(db, "users", userId));
+    const profile = profileSnap.exists()
+      ? profileSnap.data()
+      : {
+          username: auth.currentUser?.email?.split("@")[0] || "user",
+          displayName: "",
+          photoURL: auth.currentUser?.photoURL || "",
+        };
+
+    const authorName = resolvePublicName(profile);
+
     const dataToSave = {
       ...routineData,
       userId,
+
+      // author snapshot for routine cards
+      authorId: userId,
+      authorName,
+      authorUsername: profile.username || "",
+      authorDisplayName: profile.displayName || "",
+      authorPhotoURL: profile.photoURL || "",
+
       createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
     };
 
-    // Add document to Firestore
     const docRef = await addDoc(collection(db, ROUTINES_COLLECTION), dataToSave);
-    
-    console.log('Routine created with ID:', docRef.id);
-    return { 
-      success: true, 
+
+    console.log("Routine created with ID:", docRef.id);
+    return {
+      success: true,
       id: docRef.id,
-      message: 'Routine created successfully!' 
+      message: "Routine created successfully!",
     };
   } catch (error) {
-    console.error('Error creating routine:', error);
-    return { 
-      success: false, 
+    console.error("Error creating routine:", error);
+    return {
+      success: false,
       error: error.message,
-      message: 'Failed to create routine. Please try again.' 
+      message: "Failed to create routine. Please try again.",
     };
   }
 };
@@ -214,16 +260,62 @@ export const getPublicRoutines = async (arg = 20) => {
 
     const querySnapshot = await getDocs(q);
 
-    const routines = querySnapshot.docs.map((docSnap) => {
+    const routines = await Promise.all(
+      querySnapshot.docs.map(async (docSnap) => {
       const data = docSnap.data();
-      return {
-        routineId: docSnap.id,
-        id: docSnap.id,
-        ...data,
-        createdAt: data.createdAt?.toDate?.() ?? null,
-        updatedAt: data.updatedAt?.toDate?.() ?? null,
-      };
-    });
+
+      let authorDisplayName = data.authorDisplayName || "";
+      let authorUsername = data.authorUsername || "";
+      let authorName = data.authorName || "";
+      let authorPhotoURL = data.authorPhotoURL || "";
+
+      // fetch user profile if ANY author field we care about is missing
+      if ((!authorDisplayName || !authorUsername || !authorPhotoURL) && data.userId) {
+        const userSnap = await getDoc(doc(db, "users", data.userId));
+        if (userSnap.exists()) {
+          const profile = userSnap.data();
+
+          if (!authorDisplayName) {
+            authorDisplayName = String(profile.displayName || "").trim();
+          }
+
+          if (!authorUsername) {
+            authorUsername = String(profile.username || "").trim();
+          }
+
+          if (!authorPhotoURL) {
+            if (profile.photo?.key) {
+              const view = await getProfilePhotoViewUrl(profile.photo);
+              if (view.success) {
+                authorPhotoURL = view.url;
+              }
+            } else {
+              authorPhotoURL = profile.photoURL || "";
+            }
+          }
+        }
+      }
+
+        // final visible name rule: displayName || username || existing authorName || "User"
+        authorName =
+          authorDisplayName ||
+          authorUsername ||
+          authorName ||
+          "User";
+
+        return {
+          routineId: docSnap.id,
+          id: docSnap.id,
+          ...data,
+          authorDisplayName,
+          authorUsername,
+          authorName,
+          authorPhotoURL,
+          createdAt: data.createdAt?.toDate?.() ?? null,
+          updatedAt: data.updatedAt?.toDate?.() ?? null,
+        };
+      })
+    );
 
     console.log(
       `Retrieved ${routines.length} public routines${userId ? ` for user ${userId}` : ""}`
@@ -267,8 +359,6 @@ export const duplicateRoutine = async (routineId, user) => {
       isPrivate: true,
       sourceRoutineId: rid || routineId,
       copiedFromUserId: oldUserId || null,
-      authorId: user.uid,
-      authorName: user.displayName || "Anonymous",
     };
 
     return await createRoutine(user.uid, newRoutineData);
@@ -288,6 +378,17 @@ export async function postRoutineComment(routineId, text) {
   const user = auth.currentUser;
   if (!user || !text?.trim()) return;
 
+  const profile = await getCurrentUserProfile();
+  const publicName = resolvePublicName(profile || {});
+
+  let authorPhotoURL = profile?.photoURL || user.photoURL || "";
+  if (!authorPhotoURL && profile?.photo?.key) {
+    const view = await getProfilePhotoViewUrl(profile.photo);
+    if (view.success) {
+      authorPhotoURL = view.url;
+    }
+  }
+
   const commentId = makeCommentId();
   const ref = doc(db, "routines", routineId, "comments", commentId);
 
@@ -295,8 +396,10 @@ export async function postRoutineComment(routineId, text) {
     commentId,
     routineId,
     authorId: user.uid,
-    authorName: user.displayName || user.email?.split("@")[0] || "User",
-    authorPhotoURL: user.photoURL || "",
+    authorName: publicName,
+    authorUsername: profile?.username || "",
+    authorDisplayName: profile?.displayName || "",
+    authorPhotoURL: authorPhotoURL,
     text: text.trim(),
     likeCount: 0,
     dislikeCount: 0,
@@ -388,19 +491,30 @@ export async function rateRoutine({ routineId, value }) {
 }
 
 
-export async function updateUserProfile({ uid, username, displayName, photoURL }) {
+export async function updateUserProfile({ uid, displayName, photo, photoURL }) {
   if (!uid) return { success: false, message: "No user id" };
 
   try {
-    const cleanUsername = username !== undefined ? String(username || "").trim().replace(/^@+/, "") : undefined;
-    const cleanDisplayName = displayName !== undefined ? String(displayName || "").trim() : undefined;
-    const publicName = cleanDisplayName || cleanUsername || "Anonymous";
+    const userRef = doc(db, "users", uid);
+    const existingSnap = await getDoc(userRef);
+    const existing = existingSnap.exists() ? existingSnap.data() : {};
+
+    const cleanUsername = String(existing.username || "").trim().replace(/^@+/, "");
+    const cleanDisplayName =
+      displayName !== undefined ? String(displayName || "").trim() : undefined;
+
+    const effectiveDisplayName =
+      cleanDisplayName !== undefined
+        ? cleanDisplayName
+        : String(existing.displayName || "").trim();
+
+    const publicName = effectiveDisplayName || cleanUsername || "User";
 
     await setDoc(
-      doc(db, "users", uid),
+      userRef,
       {
-        ...(cleanUsername !== undefined ? { username: cleanUsername } : {}),
         ...(cleanDisplayName !== undefined ? { displayName: cleanDisplayName } : {}),
+        ...(photo !== undefined ? { photo } : {}),
         ...(photoURL !== undefined ? { photoURL } : {}),
         updatedAt: serverTimestamp(),
       },
@@ -409,7 +523,7 @@ export async function updateUserProfile({ uid, username, displayName, photoURL }
 
     if (auth.currentUser?.uid === uid) {
       await updateProfile(auth.currentUser, {
-        ...(cleanDisplayName !== undefined ? { displayName: publicName } : {}),
+        displayName: publicName,
         ...(photoURL !== undefined ? { photoURL } : {}),
       });
     }
@@ -423,7 +537,7 @@ export async function updateUserProfile({ uid, username, displayName, photoURL }
       routinesSnap.forEach((routineDoc) => {
         batch.update(routineDoc.ref, {
           authorName: publicName,
-          authorDisplayName: cleanDisplayName || "",
+          authorDisplayName: effectiveDisplayName || "",
           authorUsername: cleanUsername || "",
           ...(photoURL !== undefined ? { authorPhotoURL: photoURL } : {}),
           updatedAt: serverTimestamp(),
@@ -432,7 +546,12 @@ export async function updateUserProfile({ uid, username, displayName, photoURL }
       await batch.commit();
     }
 
-    return { success: true, publicName };
+    return {
+      success: true,
+      publicName,
+      username: cleanUsername,
+      displayName: effectiveDisplayName,
+    };
   } catch (e) {
     console.log("updateUserProfile error", e);
     return { success: false, message: e?.message || "Failed to update profile" };
@@ -451,8 +570,10 @@ export async function getUserProfile(userId) {
   }
 }
 
-async function uploadProfilePhoto({ uid }) {
-  // pick image
+export async function uploadProfilePhoto() {
+  const user = auth.currentUser;
+  if (!user) return { success: false, message: "Not logged in" };
+
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
     allowsEditing: true,
@@ -460,21 +581,99 @@ async function uploadProfilePhoto({ uid }) {
     quality: 0.8,
   });
 
-  if (result.canceled) return { success: false, canceled: true };
+  if (result.canceled) {
+    return { success: false, canceled: true };
+  }
 
-  const uri = result.assets[0].uri;
+  const asset = result.assets[0];
+  const uri = asset.uri;
+  const contentType = asset.mimeType || "image/jpeg";
 
-  // convert to blob
-  const response = await fetch(uri);
-  const blob = await response.blob();
+  const fileRes = await fetch(uri);
+  const blob = await fileRes.blob();
 
-  // upload
-  const path = `profilePhotos/${uid}.jpg`;
-  const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, blob);
+  const idToken = await user.getIdToken(true);
 
-  const url = await getDownloadURL(storageRef);
-  return { success: true, url };
+  const signRes = await fetch(`${API_BASE_URL}/profile-photo/upload-url`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ contentType }),
+  });
+
+  const signJson = await signRes.json();
+
+  if (!signRes.ok) {
+    return {
+      success: false,
+      message: signJson.error || "Failed to get upload URL",
+    };
+  }
+
+  const uploadRes = await fetch(signJson.uploadUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": contentType,
+    },
+    body: blob,
+  });
+
+  if (!uploadRes.ok) {
+    return {
+      success: false,
+      message: "S3 upload failed",
+    };
+  }
+
+  return {
+    success: true,
+    photo: {
+      bucket: signJson.bucket,
+      key: signJson.key,
+      contentType: signJson.contentType,
+    },
+  };
+}
+
+export async function getProfilePhotoViewUrl(photo) {
+  const user = auth.currentUser;
+  if (!user) return { success: false, message: "Not logged in" };
+  if (!photo?.key) return { success: false, message: "Missing photo key" };
+
+  try {
+    const idToken = await user.getIdToken(true);
+
+    const res = await fetch(`${API_BASE_URL}/profile-photo/view-url`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ key: photo.key }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      return {
+        success: false,
+        message: json.error || "Failed to get view URL",
+      };
+    }
+
+    return {
+      success: true,
+      url: json.viewUrl,
+    };
+  } catch (e) {
+    console.log("getProfilePhotoViewUrl error", e);
+    return {
+      success: false,
+      message: e?.message || "Failed to get view URL",
+    };
+  }
 }
 
 export default {
@@ -490,5 +689,6 @@ export default {
   postRoutineComment,
   updateUserProfile,
   getUserProfile,
-  uploadProfilePhoto
+  uploadProfilePhoto,
+  getProfilePhotoViewUrl,
 };

@@ -5,7 +5,7 @@ import { AppHeader } from "../components/AppHeader";
 import { BottomNav } from "../components/BottomNav";
 import { auth, db} from "../config/firebaseConfig";
 import { CommunityRoutineCard } from "../components/CommunityRoutineCard";
-import { getPublicRoutines, updateUserProfile, uploadProfilePhoto } from "../services/routineService";
+import { getPublicRoutines, updateUserProfile, uploadProfilePhoto, getProfilePhotoViewUrl } from "../services/routineService";
 import { useRoutineComments } from "../hooks/useRoutineComments";
 import { rateRoutine, reactToComment } from "../services/routineService";
 import { doc, onSnapshot, getDoc } from "firebase/firestore";
@@ -130,10 +130,17 @@ export default function ProfileScreen({ navigation, route }) {
     if (!profileUserId) return;
 
     const snap = await getDoc(doc(db, "users", profileUserId));
-    if (snap.exists()) {
-      const data = snap.data();
-      setUsername(data.username || profileUserId);
-      setDisplayName(data.displayName || "");
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+
+    setUsername(data.username || profileUserId);
+    setDisplayName(data.displayName || "");
+
+    if (data.photo?.key) {
+      const view = await getProfilePhotoViewUrl(data.photo);
+      setPhotoURL(view.success ? view.url : "");
+    } else {
       setPhotoURL(data.photoURL || "");
     }
   };
@@ -180,51 +187,52 @@ export default function ProfileScreen({ navigation, route }) {
   if (!uid) return;
 
   try {
-    const up = await uploadProfilePhoto({ uid });
+    const up = await uploadProfilePhoto();
     if (up.canceled) return;
 
     if (!up.success) {
-      Alert.alert("Error", "Upload failed.");
+      Alert.alert("Error", up.message || "Upload failed.");
       return;
     }
 
-    setPhotoURL(up.url);
-
     await updateUserProfile({
       uid,
-      photoURL: up.url,
+      photo: up.photo,
     });
 
-    Alert.alert("Updated", "Profile picture updated.");
+    const view = await getProfilePhotoViewUrl(up.photo);
+    if (view.success) {
+      setPhotoURL(view.url);
+    }
+
+    Alert.alert("Updated", "Profile picture uploaded.");
   } catch (e) {
     console.log(e);
     Alert.alert("Error", "Could not update picture.");
   }
 }, []);
 
-const handleSaveProfile = useCallback(async () => {
+  const handleSaveProfile = useCallback(async () => {
   const uid = auth.currentUser?.uid;
   if (!uid) return;
 
-  const cleanUsername = (username || "").trim().replace("@", "");
   const cleanDisplay = (displayName || "").trim();
 
   const res = await updateUserProfile({
     uid,
-    username: cleanUsername,
     displayName: cleanDisplay,
   });
 
   if (res.success) {
-    setUsername(cleanUsername);
-    setDisplayName(cleanDisplay);
+    setDisplayName(res.displayName || "");
+    setUsername(res.username || username);
 
     setPublicRoutines((prev) =>
       prev.map((routine) => ({
         ...routine,
-        username: cleanUsername,
-        displayName: cleanDisplay,
-        authorName: cleanDisplay || cleanUsername,
+        authorName: res.publicName,
+        authorDisplayName: res.displayName || "",
+        authorUsername: res.username || "",
       }))
     );
 
@@ -232,7 +240,7 @@ const handleSaveProfile = useCallback(async () => {
   } else {
     Alert.alert("Error", res.message || "Could not save profile.");
   }
-}, [username, displayName]);
+}, [displayName, username]);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
@@ -265,7 +273,7 @@ const handleSaveProfile = useCallback(async () => {
                 <View style={styles.displayNamePreviewBlock}>
                   <Text style={styles.displayNamePreviewLabel}>Shown to others</Text>
                   <Text style={styles.displayNamePreviewText}>
-                    {displayName.trim() || username}
+                    {displayName || username}
                   </Text>
                 </View>
               </View>
@@ -330,14 +338,12 @@ const handleSaveProfile = useCallback(async () => {
   const liveAuthorName =
     isOwner && routine.userId === viewerId
       ? (displayName || username)
-      : (routine.displayName || routine.authorName || routine.username || "Anonymous");
+      : (routine.authorDisplayName || routine.authorUsername || routine.authorName || "User");
             return (
               <View key={routineId} style={{ marginBottom: 4 }}>
                 <PublicRoutineRow
                   routine={{
                     ...routine,
-                    authorName: liveAuthorName,
-                    displayName: liveAuthorName,
                     username: routine.username || username,
                   }}
                   navigation={navigation}

@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export const CommunityRoutineCard = ({
@@ -35,7 +35,7 @@ export const CommunityRoutineCard = ({
     routine.authorName ||
     routine.authorUsername ||
     routine.username ||
-    "Anonymous";
+    "User";
 
   // Inline edit state
   const [editingId, setEditingId] = useState(null);
@@ -66,7 +66,13 @@ export const CommunityRoutineCard = ({
       <View style={styles.inlineRow}>
         <TouchableOpacity onPress={() => onPressAuthor?.(routine.authorId || routine.userId)}>
           <View style={styles.inlineItem}>
-            <Ionicons name="person" size={16} color="#218ED5" />
+            {routine.authorPhotoURL ? (
+              <Image source={{ uri: routine.authorPhotoURL }} style={styles.inlineAvatar} />
+            ) : (
+              <View style={styles.inlineAvatarPlaceholder}>
+                <Ionicons name="person" size={12} color="#218ED5" />
+              </View>
+            )}
             <Text style={styles.inlineText}>{authorLabel}</Text>
           </View>
         </TouchableOpacity>
@@ -134,8 +140,24 @@ export const CommunityRoutineCard = ({
 
               return (
                 <View key={id} style={styles.commentItem}>
-                  <View style={styles.commentHeader}>
-                    <Text style={styles.commentAuthor}>{c.authorNameResolved || "User"}</Text>
+                 <View style={styles.commentHeader}>
+                    <TouchableOpacity
+                      style={styles.commentAuthorWrap}
+                      onPress={() => onPressAuthor?.(c.authorId)}
+                      disabled={!c.authorId}
+                    >
+                      {c.authorPhotoURL ? (
+                        <Image source={{ uri: c.authorPhotoURL }} style={styles.commentAvatar} />
+                      ) : (
+                        <View style={styles.commentAvatarPlaceholder}>
+                          <Ionicons name="person" size={12} color="#218ED5" />
+                        </View>
+                      )}
+                      <Text style={styles.commentAuthor}>
+                        {c.authorNameResolved || c.authorDisplayName || c.authorUsername || c.authorName || "User"}
+                      </Text>
+                    </TouchableOpacity>
+
                     {!!c.createdAtText && <Text style={styles.commentDate}>{c.createdAtText}</Text>}
                   </View>
 
@@ -348,4 +370,47 @@ const styles = StyleSheet.create({
   ratingRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   rateLabel: { fontSize: 14, fontWeight: "700", color: "#444", marginRight: 6 },
   starBtn: { paddingHorizontal: 1 },
+
+  inlineAvatar: {
+  width: 22,
+  height: 22,
+  borderRadius: 999,
+  marginRight: 6,
+  backgroundColor: "#ddd",
+},
+
+inlineAvatarPlaceholder: {
+  width: 22,
+  height: 22,
+  borderRadius: 999,
+  marginRight: 6,
+  backgroundColor: "#EAF4FB",
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+commentAuthorWrap: {
+  flexDirection: "row",
+  alignItems: "center",
+  flex: 1,
+  marginRight: 8,
+},
+
+commentAvatar: {
+  width: 24,
+  height: 24,
+  borderRadius: 999,
+  marginRight: 8,
+  backgroundColor: "#ddd",
+},
+
+commentAvatarPlaceholder: {
+  width: 24,
+  height: 24,
+  borderRadius: 999,
+  marginRight: 8,
+  backgroundColor: "#EAF4FB",
+  alignItems: "center",
+  justifyContent: "center",
+},
 });

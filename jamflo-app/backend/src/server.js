@@ -4,7 +4,7 @@ import cors from "cors";
 import crypto from "crypto";
 import admin from "./firebaseAdmin.js";
 import s3 from "./s3.js";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, GetObjectCommand} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const requiredEnv = [
@@ -40,12 +40,20 @@ async function requireFirebaseUser(req, res, next) {
     }
 
     const idToken = match[1];
+    console.log("Got token, length:", idToken.length);
+    console.log("Backend Firebase project:", process.env.FIREBASE_PROJECT_ID);
+
     const decoded = await admin.auth().verifyIdToken(idToken);
+    console.log("Decoded uid:", decoded.uid);
+
     req.user = decoded;
     next();
   } catch (error) {
     console.error("Token verification failed:", error);
-    return res.status(401).json({ error: "Invalid token" });
+    return res.status(401).json({
+      error: "Invalid token",
+      details: error.message,
+    });
   }
 }
 
@@ -97,6 +105,31 @@ app.post("/profile-photo/upload-url", requireFirebaseUser, async (req, res) => {
   } catch (error) {
     console.error("Failed to create upload URL:", error);
     return res.status(500).json({ error: "Failed to create upload URL" });
+  }
+});
+
+app.post("/profile-photo/view-url", requireFirebaseUser, async (req, res) => {
+  try {
+    const { key } = req.body;
+
+    if (!key) {
+      return res.status(400).json({ error: "Missing key" });
+    }
+
+    const command = new GetObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+    });
+
+    const viewUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
+
+    return res.json({
+      viewUrl,
+      expiresIn: 300,
+    });
+  } catch (error) {
+    console.error("Failed to create view URL:", error);
+    return res.status(500).json({ error: "Failed to create view URL" });
   }
 });
 
