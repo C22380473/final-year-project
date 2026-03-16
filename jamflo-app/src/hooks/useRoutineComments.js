@@ -1,8 +1,40 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { collection, doc, getDoc, onSnapshot, orderBy, query, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, orderBy, query, deleteDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { auth } from "../config/firebaseConfig";
 import { postRoutineComment as postRoutineCommentService, getProfilePhotoViewUrl } from "../services/routineService";
+import { Alert } from "react-native";
+
+// Basic list of banned words
+const bannedWords = [
+  "fuck",
+  "shit",
+  "bitch",
+  "asshole",
+  "idiot",
+];
+
+function normalizeForModeration(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[@]/g, "a")
+    .replace(/[1!|]/g, "i")
+    .replace(/[3]/g, "e")
+    .replace(/[4]/g, "a")
+    .replace(/[5$]/g, "s")
+    .replace(/[0]/g, "o")
+    .replace(/[7]/g, "t")
+    .replace(/[^a-z]/g, "");
+}
+
+function containsInappropriateLanguage(text) {
+  const raw = String(text || "").toLowerCase();
+  const normalized = normalizeForModeration(text);
+
+  return bannedWords.some((word) => {
+    return raw.includes(word) || normalized.includes(word);
+  });
+}
 
 function makeCommentId() {
   return `c_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -73,6 +105,13 @@ export function useRoutineComments(routineId) {
     const text = newComment.trim();
     if (!routineId || !text) return;
 
+    if (containsInappropriateLanguage(text)) {
+    Alert.alert(
+      "Comment not posted",
+      "Please keep comments respectful and avoid inappropriate language."
+    );
+    return;
+  }
     await postRoutineCommentService(routineId, text);
     setNewComment("");
   }, [newComment, routineId]);
@@ -90,8 +129,17 @@ export function useRoutineComments(routineId) {
 const editComment = useCallback(
   async (commentId, nextText) => {
     const user = auth.currentUser;
-    const clean = (nextText || "").trim();
+    const clean = String(nextText || "").trim();
+
     if (!user || !routineId || !commentId || !clean) return;
+
+    if (containsInappropriateLanguage(clean)) {
+      Alert.alert(
+        "Comment not updated",
+        "Please keep comments respectful and avoid inappropriate language."
+      );
+      return;
+    }
 
     await updateDoc(doc(db, "routines", routineId, "comments", commentId), {
       text: clean,
@@ -100,6 +148,5 @@ const editComment = useCallback(
   },
   [routineId]
 );
-
   return { comments, newComment, setNewComment, postComment, deleteComment, editComment };
 }
