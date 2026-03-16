@@ -20,9 +20,7 @@ import { auth, db } from "../config/firebaseConfig";
 import { doc, onSnapshot } from "firebase/firestore";
 import { CommunityRoutineCard } from "../components/CommunityRoutineCard";
 import { useRoutineComments } from "../hooks/useRoutineComments";
-
-const FILTERS = ["All", "Blues", "Jazz", "Technique", "Fingerstyle"];
-
+import { normalizeTag } from "../utils/tagUtils";
 
 function RoutineCardRow({ routine, navigation, onSaveRoutine, onViewDetails,  onRefreshRoutines}) {
   const routineId = routine.routineId || routine.id;
@@ -153,26 +151,56 @@ export default function CommunityTemplatesScreen({ navigation }) {
     setPublicRoutines(res.routines || []);
   }, []);
 
-useEffect(() => {
-  fetchPublic();
-}, [fetchPublic]);
+  useEffect(() => {
+    fetchPublic();
+  }, [fetchPublic]);
+
+  const availableTags = useMemo(() => {
+    const tagCounts = {};
+
+    for (const routine of publicRoutines || []) {
+      for (const tag of routine.tags || []) {
+        const clean = normalizeTag(tag);
+        if (!clean) continue;
+
+        tagCounts[clean] = (tagCounts[clean] || 0) + 1;
+      }
+    }
+
+    const sortedTags = Object.entries(tagCounts)
+      .sort((a, b) => b[1] - a[1]) // most used first
+      .map(([tag]) => tag);
+
+    return ["All", ...sortedTags.slice(0, 12)];
+  }, [publicRoutines]);
+
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
+    const selected = normalizeTag(selectedFilter);
 
-    return (publicRoutines || [])
-      .filter((r) => {
-        const tag = (r.category || r.tag || "All").toLowerCase();
-        if (selectedFilter !== "All" && tag !== selectedFilter.toLowerCase())
-          return false;
+    return (publicRoutines || []).filter((r) => {
+      const routineTags = Array.isArray(r.tags)
+        ? r.tags.map(normalizeTag).filter(Boolean)
+        : [];
 
-        if (!s) return true;
-        const name = (r.name || "").toLowerCase();
-        const desc = (r.description || "").toLowerCase();
-        const author = (r.authorName || "").toLowerCase();
-        return name.includes(s) || desc.includes(s) || author.includes(s);
-      })
-      .slice(0, 50);
+      if (selected !== "all" && !routineTags.includes(selected)) {
+        return false;
+      }
+
+      if (!s) return true;
+
+      const searchable = [
+        r.name || "",
+        r.description || "",
+        r.authorName || "",
+        ...(r.tags || []),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchable.includes(s);
+    });
   }, [publicRoutines, selectedFilter, search]);
 
   const handleSaveRoutine = useCallback(
@@ -237,7 +265,7 @@ useEffect(() => {
           showsHorizontalScrollIndicator={false}
           style={styles.filterRow}
         >
-          {FILTERS.map((filter) => (
+          {availableTags.map((filter) => (
             <TouchableOpacity
               key={filter}
               style={[
@@ -271,6 +299,12 @@ useEffect(() => {
             />
           </View>
         ))}
+
+        {!loading && filtered.length === 0 && (
+          <Text style={{ color: "#666", marginTop: 20 }}>
+            No routines match your search.
+          </Text>
+        )}
       </ScrollView>
 
       <BottomNav

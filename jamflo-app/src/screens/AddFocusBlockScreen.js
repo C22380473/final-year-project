@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, ScrollView, TextInput, Alert, StyleSheet } from "react-native";
 import { AppHeader } from "../components/AppHeader";
 import { BottomNav } from "../components/BottomNav";
@@ -8,6 +8,7 @@ import { BackBreadcrumbHeader } from "../components/BackBreadcrumbHeader";
 import { Card } from "../components/Card";
 import { ExerciseCard } from "../components/ExerciseCard";
 import { OutlineButton } from "../components/OutlineButton";
+import { buildRoutineAutoTags } from "../utils/tagUtils";
 
 export default function AddFocusBlockScreen({ navigation, route }) {
   const {
@@ -207,6 +208,15 @@ export default function AddFocusBlockScreen({ navigation, route }) {
     }
   };
 
+  const previewAutoTags = useMemo(() => {
+  const block = {
+    name: focusName,
+    description: focusDescription,
+    exercises,
+  };
+  return buildRoutineAutoTags([block]);
+}, [focusName, focusDescription, exercises]);
+
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
       <AppHeader />
@@ -253,6 +263,17 @@ export default function AddFocusBlockScreen({ navigation, route }) {
           />
 
           <Text style={styles.totalDuration}>Total Duration: {calculateTotalDuration()} mins</Text>
+        </Card>
+
+        <Card>
+          <Text style={styles.cardTitle}>Auto Tags Preview</Text>
+          <View style={styles.tagsWrap}>
+            {previewAutoTags.map((tag) => (
+              <View key={tag} style={styles.tagChip}>
+                <Text style={styles.tagChipText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
         </Card>
 
         {/* Exercise Header */}
@@ -344,4 +365,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+
+  tagsWrap: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  marginTop: 10,
+  gap: 8,
+},
+tagChip: {
+  backgroundColor: "#E8F4FD",
+  borderRadius: 999,
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+},
+tagChipText: {
+  color: "#218ED5",
+  fontWeight: "600",
+  fontSize: 12,
+},
 });

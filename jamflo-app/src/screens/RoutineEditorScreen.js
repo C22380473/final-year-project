@@ -14,6 +14,7 @@ import { SavingOverlay } from "../components/SavingOverlay";
 import { useRoutine } from "../contexts/RoutineContext";
 import { createRoutine, updateRoutine } from "../services/routineService";
 import { auth } from "../config/firebaseConfig";
+import { buildRoutineTags } from "../utils/tagUtils";
 
 export default function RoutineEditorScreen({ navigation }) {
   const {
@@ -29,12 +30,32 @@ export default function RoutineEditorScreen({ navigation }) {
   const [routineDescription, setRoutineDescription] = useState("");
   const [isPrivate, setIsPrivate] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const [userTags, setUserTags] = useState([]);
+
+  const addUserTag = () => {
+    const cleaned = tagInput.trim().toLowerCase();
+    if (!cleaned) return;
+
+    if (userTags.includes(cleaned)) {
+      setTagInput("");
+      return;
+    }
+
+    setUserTags((prev) => [...prev, cleaned]);
+    setTagInput("");
+  };
+
+   const removeUserTag = (tag) => {
+      setUserTags((prev) => prev.filter((t) => t !== tag));
+    };
 
   /** Load existing routine into state */
   useEffect(() => {
     setRoutineName(currentRoutine.name || "");
     setRoutineDescription(currentRoutine.description || "");
     setIsPrivate(currentRoutine.isPrivate !== false);
+    setUserTags(Array.isArray(currentRoutine.userTags) ? currentRoutine.userTags : []);
   }, [currentRoutine]);
 
   /** Remove focus block */
@@ -70,7 +91,14 @@ export default function RoutineEditorScreen({ navigation }) {
 
     setSaving(true);
 
+
+    const { autoTags, tags, userTags: cleanUserTags } = buildRoutineTags({
+      focusBlocks: currentRoutine.focusBlocks,
+      userTags,
+    });
+
     try {
+
       const routineData = {
         name: routineName,
         description: routineDescription,
@@ -79,7 +107,10 @@ export default function RoutineEditorScreen({ navigation }) {
         totalDuration: calculateTotalDuration(),
         authorId: user.uid,
         authorName: user.displayName || "Anonymous",
-        userId: currentRoutine.userId || user.uid
+        userId: currentRoutine.userId || user.uid,
+        userTags: cleanUserTags,
+        autoTags,
+        tags,
       };
 
       const routineDocId = currentRoutine.id || currentRoutine.routineId;
@@ -170,6 +201,36 @@ export default function RoutineEditorScreen({ navigation }) {
             multiline
             style={[styles.input, styles.textArea]}
           />
+
+          <Text style={styles.label}>Tags</Text>
+          <View style={styles.tagInputRow}>
+            <TextInput
+              value={tagInput}
+              onChangeText={setTagInput}
+              placeholder="Add optional tags"
+              style={[styles.input, { flex: 1, marginTop: 4 }]}
+              onSubmitEditing={addUserTag}
+            />
+            <TouchableOpacity onPress={addUserTag} style={styles.addTagBtn}>
+              <Text style={styles.addTagBtnText}>Add</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.tagsWrap}>
+            {userTags.map((tag) => (
+              <TouchableOpacity
+                key={tag}
+                onPress={() => removeUserTag(tag)}
+                style={styles.tagChip}
+              >
+                <Text style={styles.tagChipText}>{tag} ✕</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={styles.helperText}>
+            Exercise-based tags will be added automatically when you save.
+          </Text>
 
           <Text style={styles.totalDuration}>
             Total Duration: {calculateTotalDuration()} mins
@@ -350,5 +411,44 @@ const styles = StyleSheet.create({
   paddingHorizontal: 20, 
   borderRadius: 8,       
   alignSelf: "center",   
-}
+},
+
+tagInputRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 8,
+},
+addTagBtn: {
+  marginTop: 4,
+  backgroundColor: "#218ED5",
+  borderRadius: 8,
+  paddingHorizontal: 14,
+  paddingVertical: 12,
+},
+addTagBtnText: {
+  color: "#fff",
+  fontWeight: "600",
+},
+tagsWrap: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  marginTop: 10,
+  gap: 8,
+},
+tagChip: {
+  backgroundColor: "#E8F4FD",
+  borderRadius: 999,
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+},
+tagChipText: {
+  color: "#218ED5",
+  fontWeight: "600",
+  fontSize: 12,
+},
+helperText: {
+  marginTop: 8,
+  color: "#666",
+  fontSize: 12,
+},
 });
