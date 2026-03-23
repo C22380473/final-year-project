@@ -8,7 +8,9 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Share,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { AppHeader } from "../components/AppHeader";
 import { BottomNav } from "../components/BottomNav";
@@ -18,16 +20,25 @@ import { useRoutineSessionData } from "../hooks/useRoutineSessionData";
 import { useRoutineNotes } from "../hooks/useRoutineNotes";
 import { useSessionPersistence } from "../hooks/useSessionPersistence";
 import { useExerciseNavigator } from "../hooks/useExerciseNavigator";
-import {useMetronome } from "../hooks/useMetronome";
+import { useMetronome } from "../hooks/useMetronome";
 import { OverallProgressCard } from "../components/practiceSession/OverallProgressCard";
 import { SessionExerciseCard } from "../components/practiceSession/SessionExerciseCard";
 import { MetronomeCard } from "../components/practiceSession/MetronomeCard";
 import { SessionOverviewCard } from "../components/practiceSession/SessionOverviewCard";
 import { ResourcesCard } from "../components/practiceSession/ResourcesCard";
 import { NotesCard } from "../components/practiceSession/NotesCard";
+import { recordCompletedSession } from "../services/userStatsService";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 const BOTTOM_NAV_HEIGHT = 72;
+
+const ACHIEVEMENT_LABELS = {
+  first_session: "First Session",
+  streak_3: "3 Day Streak",
+  streak_7: "7 Day Streak",
+  minutes_100: "100 Minutes",
+  xp_500: "500 XP",
+};
 
 // ─── Auth guard ──────────────────────────────────────────────────────────────
 export default function PracticeSessionScreen(props) {
@@ -37,7 +48,10 @@ export default function PracticeSessionScreen(props) {
     return (
       <View style={[styles.bg, styles.center]}>
         <Text style={styles.emptyTitle}>You're not signed in</Text>
-        <TouchableOpacity onPress={() => props.navigation.goBack()} style={styles.emptyBtn}>
+        <TouchableOpacity
+          onPress={() => props.navigation.goBack()}
+          style={styles.emptyBtn}
+        >
           <Text style={styles.emptyBtnText}>Go back</Text>
         </TouchableOpacity>
       </View>
@@ -49,12 +63,15 @@ export default function PracticeSessionScreen(props) {
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 function PracticeSessionInner({ navigation, route, userId }) {
-  const routineId  = route?.params?.routineId;
+  const routineId = route?.params?.routineId;
   const startFresh = route?.params?.startFresh === true;
-  const mode       = startFresh ? "fresh" : "continue";
+  const mode = startFresh ? "fresh" : "continue";
+
+  const [rewardData, setRewardData] = useState(null);
+  const [showRewardModal, setShowRewardModal] = useState(false);
 
   // ── Paging ──
-  const pagesRef  = useRef(null);
+  const pagesRef = useRef(null);
   const [pageIndex, setPageIndex] = useState(0);
 
   // ── Session state ──
@@ -73,63 +90,103 @@ function PracticeSessionInner({ navigation, route, userId }) {
   // - it plays when metronomeEnabled is ON AND isRunning is true
   // - if you want it to play even when practice timer is paused,
   //   pass `isRunning: metronomeEnabled` instead (see note below).
-  const { isReady: metronomeReady, stop: stopMetronome } = useMetronome({
+  const { stop: stopMetronome } = useMetronome({
     bpm,
     beatsPerBar,
     enabled: metronomeEnabled,
-    isRunning,         // metronome follows the play/pause button
+    isRunning, // metronome follows the play/pause button
     volume: 1.0,
     onBeat: (beatIdx0) => setCurrentBeat0(beatIdx0),
     debug: true,
   });
 
   const handleStop = useCallback(() => {
-  setIsRunning(false);
-  stopMetronome();
-}, [stopMetronome]);
+    setIsRunning(false);
+    stopMetronome();
+  }, [stopMetronome]);
 
   // ── Data ──
-  const { routine, focusBlocks, loadingRoutine, loadError } = useRoutineSessionData(routineId);
+  const { routine, focusBlocks, loadingRoutine, loadError } =
+    useRoutineSessionData(routineId);
 
   const {
     routineNotes,
     noteText,
     setNoteText,
     savingNote,
-    saveNote:   handleSaveNote,
+    saveNote: handleSaveNote,
     deleteNote: handleDeleteNote,
-    editNote:   handleEditNote,
+    editNote: handleEditNote,
   } = useRoutineNotes(routineId);
 
   // ── Navigator ──
   const nav = useExerciseNavigator({
     focusBlocks,
-    initialBlockIndex:   0,
+    initialBlockIndex: 0,
     initialExerciseIndex: 0,
     onComplete: async () => {
       if (sessionCompletedRef.current) return;
       sessionCompletedRef.current = true;
       setIsRunning(false);
+
+      const totalMinutes = Array.isArray(focusBlocks)
+        ? focusBlocks.reduce((sum, block) => {
+            const blockMinutes = Array.isArray(block.exercises)
+              ? block.exercises.reduce(
+                  (inner, ex) => inner + Number(ex.durationMins || 0),
+                  0,
+                )
+              : 0;
+            return sum + blockMinutes;
+          }, 0)
+        : 0;
+
+      const completedExercises = Number(nav.progress?.totalExercises || 0);
+
+      let statsRes = null;
+
+      try {
+        statsRes = await recordCompletedSession({
+          uid: userId,
+          minutesPracticed: totalMinutes,
+          completedExercises,
+        });
+      } catch (e) {
+        console.log("recordCompletedSession failed:", e);
+      }
+
       await markCompletedRef.current?.();
       stopMetronome();
-      Alert.alert(
-        "Session complete! 🎸",
-        "Nice work — you finished this practice session!",
-        [{ text: "Back to Home", onPress: () => navigation.goBack() }],
-      );
+
+      const unlocked = Array.isArray(statsRes?.stats?.newlyUnlockedAchievements)
+        ? statsRes.stats.newlyUnlockedAchievements
+        : [];
+
+      const unlockedLabels = unlocked
+        .map((id) => ACHIEVEMENT_LABELS[id])
+        .filter(Boolean);
+
+      setRewardData({
+        xpGained: statsRes?.stats?.xpGained || 0,
+        streak: statsRes?.stats?.currentStreak || 0,
+        unlocked: unlockedLabels,
+      });
+
+      setShowRewardModal(true);
     },
   });
 
   const currentExercise = nav.currentExercise;
-  const durationMs      = nav.durationMs;
-  const safeDurationMs  = typeof durationMs === "number" && durationMs > 0 ? durationMs : 1;
+  const durationMs = nav.durationMs;
+  const safeDurationMs =
+    typeof durationMs === "number" && durationMs > 0 ? durationMs : 1;
 
   // ── Timer ──
   const { seconds, remainingMs } = useCountdownTimer({
-    durationMs:         safeDurationMs,
+    durationMs: safeDurationMs,
     initialRemainingMs: restoredRemainingMs ?? safeDurationMs,
     isRunning,
-    onFinish:   () => nav.goNext(),
+    onFinish: () => nav.goNext(),
     exerciseId: currentExercise?.id,
   });
 
@@ -139,25 +196,29 @@ function PracticeSessionInner({ navigation, route, userId }) {
     userId,
     mode,
     getSnapshot: () => ({
-      blockIndex:    nav.blockIndex,
+      blockIndex: nav.blockIndex,
       exerciseIndex: nav.exerciseIndex,
       remainingMs,
       isRunning,
       bpm,
       beatsPerBar,
-      isCompleted:  sessionCompletedRef.current === true,
-      updatedAtMs:  Date.now(),
+      isCompleted: sessionCompletedRef.current === true,
+      updatedAtMs: Date.now(),
     }),
     onRestore: (snap) => {
       nav.setPosition(snap.blockIndex ?? 0, snap.exerciseIndex ?? 0);
-      setRestoredRemainingMs(typeof snap.remainingMs === "number" ? snap.remainingMs : null);
+      setRestoredRemainingMs(
+        typeof snap.remainingMs === "number" ? snap.remainingMs : null,
+      );
       setIsRunning(!!snap.isRunning);
       setBpm(snap.bpm ?? 120);
       setBeatsPerBar(snap.beatsPerBar ?? 4);
     },
   });
 
-  useEffect(() => { markCompletedRef.current = markCompleted; }, [markCompleted]);
+  useEffect(() => {
+    markCompletedRef.current = markCompleted;
+  }, [markCompleted]);
 
   // Auto-set BPM from exercise tempo
   useEffect(() => {
@@ -175,7 +236,48 @@ function PracticeSessionInner({ navigation, route, userId }) {
   useEffect(() => {
     if (!userId || !routineId || sessionCompletedRef.current) return;
     save();
-  }, [save, userId, routineId, nav.blockIndex, nav.exerciseIndex, remainingMs, isRunning, bpm, beatsPerBar]);
+  }, [
+    save,
+    userId,
+    routineId,
+    nav.blockIndex,
+    nav.exerciseIndex,
+    remainingMs,
+    isRunning,
+    bpm,
+    beatsPerBar,
+  ]);
+
+  const handleShareProgress = useCallback(async () => {
+    try {
+      const xp = Number(rewardData?.xpGained || 0);
+      const streak = Number(rewardData?.streak || 0);
+      const unlocked = Array.isArray(rewardData?.unlocked)
+        ? rewardData.unlocked
+        : [];
+
+      const lines = [`I just completed a practice session on JamFlo 🎸`];
+
+      if (xp > 0) lines.push(`✨ Earned ${xp} XP`);
+      if (streak > 0) {
+        lines.push(
+          `🔥 Current streak: ${streak} day${streak === 1 ? "" : "s"}`,
+        );
+      }
+      if (unlocked.length > 0) {
+        lines.push(`🏆 Unlocked: ${unlocked.join(", ")}`);
+      }
+
+      lines.push(`#JamFlo`);
+
+      await Share.share({
+        message: lines.join("\n"),
+      });
+    } catch (e) {
+      console.log("shareProgress error:", e);
+      Alert.alert("Error", "Could not open share options.");
+    }
+  }, [rewardData]);
 
   // ── Derived UI ──
   const handleToggleRun = useCallback(() => setIsRunning((v) => !v), []);
@@ -210,7 +312,10 @@ function PracticeSessionInner({ navigation, route, userId }) {
       <View style={[styles.bg, styles.center]}>
         <Text style={styles.emptyTitle}>Couldn't load routine</Text>
         <Text style={styles.emptyText}>{loadError}</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.emptyBtn}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.emptyBtn}
+        >
           <Text style={styles.emptyBtnText}>Go back</Text>
         </TouchableOpacity>
       </View>
@@ -224,7 +329,10 @@ function PracticeSessionInner({ navigation, route, userId }) {
         <Text style={styles.emptyText}>
           Add exercises to a focus block before starting a session.
         </Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.emptyBtn}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.emptyBtn}
+        >
           <Text style={styles.emptyBtnText}>Go back</Text>
         </TouchableOpacity>
       </View>
@@ -256,14 +364,19 @@ function PracticeSessionInner({ navigation, route, userId }) {
   };
 
   // ── Resources ──
-  const resources = Array.isArray(currentExercise?.resources) ? currentExercise.resources : [];
+  const resources = Array.isArray(currentExercise?.resources)
+    ? currentExercise.resources
+    : [];
 
   const openResource = async (url) => {
     if (!url) return;
     try {
       const can = await Linking.canOpenURL(url);
       if (!can) {
-        Alert.alert("Can't open link", "This resource link is not supported on this device.");
+        Alert.alert(
+          "Can't open link",
+          "This resource link is not supported on this device.",
+        );
         return;
       }
       await Linking.openURL(url);
@@ -278,7 +391,9 @@ function PracticeSessionInner({ navigation, route, userId }) {
       <AppHeader />
 
       <View style={styles.titleRow}>
-        <Text style={styles.routineTitle}>{routine?.name ?? "Practice Session"}</Text>
+        <Text style={styles.routineTitle}>
+          {routine?.name ?? "Practice Session"}
+        </Text>
         <TouchableOpacity onPress={handleExit} style={styles.exitBtn}>
           <Text style={styles.exitText}>Exit</Text>
         </TouchableOpacity>
@@ -370,7 +485,9 @@ function PracticeSessionInner({ navigation, route, userId }) {
           <ResourcesCard
             isRunning={isRunning}
             resources={resources}
-            onOpen={(url) => { if (!isRunning) openResource(url); }}
+            onOpen={(url) => {
+              if (!isRunning) openResource(url);
+            }}
           />
 
           <NotesCard
@@ -388,14 +505,73 @@ function PracticeSessionInner({ navigation, route, userId }) {
         </ScrollView>
       </ScrollView>
 
+      {showRewardModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Session Complete 🎸</Text>
+
+            <View style={styles.rewardStatBox}>
+              <Text style={styles.modalXP}>
+                +{rewardData?.xpGained || 0} XP
+              </Text>
+            </View>
+
+            {rewardData?.streak > 0 && (
+              <View style={styles.rewardMiniRow}>
+                <Text style={styles.modalStreak}>
+                  🔥 {rewardData.streak} day streak
+                </Text>
+              </View>
+            )}
+
+            {rewardData?.unlocked?.length > 0 && (
+              <View style={styles.unlockedWrap}>
+                <Text style={styles.modalSection}>Achievements</Text>
+                {rewardData.unlocked.map((label) => (
+                  <View key={label} style={styles.unlockedPill}>
+                    <Text style={styles.unlockedPillText}>🏆 {label}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalActionButton, styles.modalSecondaryButton]}
+                onPress={handleShareProgress}
+              >
+                <View style={styles.modalButtonInner}>
+                  <Ionicons
+                    name="share-social-outline"
+                    size={18}
+                    color="#111827"
+                  />
+                  <Text style={styles.modalSecondaryButtonText}>Share</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalActionButton, styles.modalPrimaryButton]}
+                onPress={() => {
+                  setShowRewardModal(false);
+                  navigation.goBack();
+                }}
+              >
+                <Text style={styles.modalPrimaryButtonText}>Back to Home</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
       <BottomNav
         activeTab="Home"
         onTabPress={(t) => {
-          if (t === "Home")      navigation.navigate("Home");
-          if (t === "Create")    navigation.navigate("CreateRoutine");
+          if (t === "Home") navigation.navigate("Home");
+          if (t === "Create") navigation.navigate("CreateRoutine");
           if (t === "Community") navigation.navigate("Community");
-          if (t === "Tools")     navigation.navigate("Tools");
-          if (t === "Profile")   navigation.navigate("Profile");
+          if (t === "Tools") navigation.navigate("Tools");
+          if (t === "Profile") navigation.navigate("Profile");
         }}
       />
     </View>
@@ -404,12 +580,23 @@ function PracticeSessionInner({ navigation, route, userId }) {
 
 /* ─────────────────────────── styles ─────────────────────────────────────── */
 const styles = StyleSheet.create({
-  bg:     { flex: 1, backgroundColor: "#11b5b0" },
+  bg: { flex: 1, backgroundColor: "#11b5b0" },
   center: { justifyContent: "center", alignItems: "center", padding: 24 },
 
   emptyTitle: { color: "#fff", fontWeight: "900", fontSize: 18 },
-  emptyText:  { color: "rgba(255,255,255,0.9)", marginTop: 8, textAlign: "center", fontWeight: "700" },
-  emptyBtn:   { marginTop: 18, backgroundColor: "rgba(255,255,255,0.9)", paddingVertical: 12, paddingHorizontal: 18, borderRadius: 14 },
+  emptyText: {
+    color: "rgba(255,255,255,0.9)",
+    marginTop: 8,
+    textAlign: "center",
+    fontWeight: "700",
+  },
+  emptyBtn: {
+    marginTop: 18,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+  },
   emptyBtnText: { fontWeight: "900", color: "#0f172a" },
 
   titleRow: {
@@ -432,9 +619,136 @@ const styles = StyleSheet.create({
   },
   exitText: { color: "#ffffff", fontWeight: "700" },
 
-  dotsRow: { flexDirection: "row", gap: 8, paddingHorizontal: 18, paddingBottom: 10 },
-  dot:       { width: 22, height: 6, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.35)" },
+  dotsRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingBottom: 10,
+  },
+  dot: {
+    width: 22,
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.35)",
+  },
   dotActive: { backgroundColor: "rgba(255,255,255,0.95)" },
 
   page: { width: SCREEN_W, paddingHorizontal: 18 },
+
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  modalCard: {
+    width: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 20,
+    alignItems: "center",
+  },
+
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    marginBottom: 10,
+  },
+
+  modalXP: {
+    fontSize: 28,
+    fontWeight: "900",
+    color: "#13B4B0",
+  },
+
+  modalStreak: {
+    fontSize: 16,
+    marginTop: 6,
+    color: "#FF6B00",
+    fontWeight: "700",
+  },
+
+  modalSection: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 6,
+    textAlign: "center",
+  },
+
+  modalActions: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 20,
+    width: "100%",
+  },
+
+  modalActionButton: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+
+  modalPrimaryButton: {
+    backgroundColor: "#13B4B0",
+  },
+
+  modalPrimaryButtonText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 16,
+  },
+
+  modalSecondaryButton: {
+    backgroundColor: "#F3F4F6",
+  },
+
+  modalSecondaryButtonText: {
+    color: "#111827",
+    fontWeight: "800",
+    fontSize: 16,
+  },
+  modalButtonInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  rewardStatBox: {
+    marginTop: 12,
+    backgroundColor: "#F0FDFA",
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+  },
+
+  rewardMiniRow: {
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  unlockedWrap: {
+    width: "100%",
+    marginTop: 16,
+    alignItems: "center",
+  },
+
+  unlockedPill: {
+    marginTop: 8,
+    backgroundColor: "#FFF7ED",
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+
+  unlockedPillText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#9A3412",
+  },
 });

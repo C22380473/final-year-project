@@ -120,7 +120,8 @@ export default function CreateRoutineScreen({ navigation }) {
       <BottomNav activeTab="Create" onTabPress={(tab) => {
         if (tab === "Home") navigation.navigate("Home");
         if (tab === "Community") navigation.navigate("Community");
-        if (t === "Profile") navigation.navigate("Profile");
+        if (tab === "Profile") navigation.navigate("Profile");
+         if (tab === "Tools") navigation.navigate("Tools");
       }} />
     </View>
   );

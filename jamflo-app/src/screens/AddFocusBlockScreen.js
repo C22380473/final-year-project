@@ -324,7 +324,15 @@ export default function AddFocusBlockScreen({ navigation, route }) {
         </View>
       </ScrollView>
 
-      <BottomNav activeTab="Create" onTabPress={(tab) => tab === "Home" && navigation.navigate("Home")} />
+      <BottomNav activeTab="Create"  onTabPress={(t) => {
+          if (t === "Home") navigation.navigate("Home");
+          if (t === "Create") navigation.navigate("CreateRoutine");
+          if (t === "Community") navigation.navigate("Community");
+          if (t === "Profile") navigation.navigate("Profile");
+          if (t === "Tools") navigation.navigate("Tools");
+        }} />
+
+        
     </View>
   );
 }

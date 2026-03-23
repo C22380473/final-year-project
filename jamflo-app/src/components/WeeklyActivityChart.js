@@ -1,11 +1,45 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Rect, Text as SvgText, Line } from 'react-native-svg';
+import React from "react";
+import { Text, StyleSheet, useWindowDimensions } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Rect, Text as SvgText, Line } from "react-native-svg";
 
-export const WeeklyActivityChart = ({ data }) => {
-  // data format: [{ day: "Mon", value: 20 }, ...]
-  
+export const WeeklyActivityChart = ({ data = [] }) => {
+  const { width } = useWindowDimensions();
+
+  const cardWidth = width - 40;
+  const chartWidth = cardWidth - 40;
+  const chartHeight = 190;
+
+  const leftPad = 34;
+  const rightPad = 10;
+  const topPad = 16;
+  const bottomPad = 28;
+
+  const plotWidth = chartWidth - leftPad - rightPad;
+  const plotHeight = chartHeight - topPad - bottomPad;
+
+  const safeData =
+    Array.isArray(data) && data.length
+      ? data
+      : [
+          { day: "Mon", value: 0 },
+          { day: "Tue", value: 0 },
+          { day: "Wed", value: 0 },
+          { day: "Thu", value: 0 },
+          { day: "Fri", value: 0 },
+          { day: "Sat", value: 0 },
+          { day: "Sun", value: 0 },
+        ];
+
+  const maxValue = Math.max(...safeData.map((d) => Number(d.value || 0)), 10);
+  const step = plotWidth / safeData.length;
+  const barWidth = Math.min(26, step * 0.62);
+
+  const gridTicks = 5;
+  const tickValues = Array.from({ length: gridTicks }, (_, i) =>
+    Math.round((maxValue / gridTicks) * (gridTicks - i))
+  );
+
   return (
     <LinearGradient
       colors={["#667EEA", "#764BA2"]}
@@ -13,47 +47,62 @@ export const WeeklyActivityChart = ({ data }) => {
     >
       <Text style={styles.chartTitle}>📊 Weekly Activity</Text>
 
-      <Svg height="180" width="320">
-        {/* Y-axis labels */}
-        <SvgText x="10" y="20" fill="#fff" fontSize="10">50</SvgText>
-        <SvgText x="10" y="60" fill="#fff" fontSize="10">40</SvgText>
-        <SvgText x="10" y="100" fill="#fff" fontSize="10">30</SvgText>
-        <SvgText x="10" y="140" fill="#fff" fontSize="10">20</SvgText>
-        <SvgText x="10" y="165" fill="#fff" fontSize="10">10</SvgText>
+      <Svg height={chartHeight} width={chartWidth}>
+        {tickValues.map((tick, i) => {
+          const y = topPad + (plotHeight / (gridTicks - 1)) * i;
+          return (
+            <React.Fragment key={`tick-${tick}-${i}`}>
+              <SvgText
+                x={leftPad - 12}
+                y={y + 4}
+                fill="#fff"
+                fontSize="10"
+                textAnchor="end"
+              >
+                {tick}
+              </SvgText>
+              <Line
+                x1={leftPad}
+                y1={y}
+                x2={leftPad + plotWidth}
+                y2={y}
+                stroke="rgba(255,255,255,0.18)"
+                strokeWidth="1"
+              />
+            </React.Fragment>
+          );
+        })}
 
-        {/* Grid lines */}
-        <Line x1="30" y1="20" x2="310" y2="20" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-        <Line x1="30" y1="60" x2="310" y2="60" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-        <Line x1="30" y1="100" x2="310" y2="100" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-        <Line x1="30" y1="140" x2="310" y2="140" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-        <Line x1="30" y1="165" x2="310" y2="165" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+        {safeData.map((item, index) => {
+          const value = Number(item.value || 0);
+          const barHeight =
+            maxValue > 0 ? (value / maxValue) * (plotHeight - 6) : 0;
 
-        {/* Bars */}
-        {data.map((item, index) => (
-          <Rect
-            key={index}
-            x={index * 40 + 38}
-            y={165 - item.value * 2.8}
-            width="26"
-            height={item.value * 2.8}
-            rx="6"
-            fill="#4ECDC4"
-          />
-        ))}
+          const x = leftPad + index * step + (step - barWidth) / 2;
+          const y = topPad + plotHeight - barHeight;
 
-        {/* X-axis labels */}
-        {data.map((item, index) => (
-          <SvgText 
-            key={item.day} 
-            x={index * 40 + 51} 
-            y="178" 
-            fill="#fff" 
-            fontSize="11"
-            textAnchor="middle"
-          >
-            {item.day}
-          </SvgText>
-        ))}
+          return (
+            <React.Fragment key={`${item.day}-${index}`}>
+              <Rect
+                x={x}
+                y={y}
+                width={barWidth}
+                height={Math.max(0, barHeight)}
+                rx="6"
+                fill="#22D3EE"
+              />
+              <SvgText
+                x={x + barWidth / 2}
+                y={topPad + plotHeight + 18}
+                fill="#fff"
+                fontSize="11"
+                textAnchor="middle"
+              >
+                {item.day}
+              </SvgText>
+            </React.Fragment>
+          );
+        })}
       </Svg>
     </LinearGradient>
   );
@@ -71,10 +120,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
   },
-  chartTitle: { 
-    fontSize: 15, 
-    fontWeight: "700", 
-    marginBottom: 15, 
-    color: "#fff" 
+  chartTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 15,
+    color: "#fff",
   },
 });

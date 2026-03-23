@@ -3,24 +3,24 @@ import { View, StyleSheet } from "react-native";
 import { StatCard } from "./StatCard";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
-export const StatsRow = () => {
+export const StatsRow = ({ stats }) => {
   return (
     <View style={styles.row}>
       <StatCard
         icon={<Ionicons name="flame" size={32} color="#fff" />}
-        number="3"
+        number={Number(stats?.currentStreak || 0)}
         label="Daily Streak"
         gradientColors={["#FF6B35", "#F7931E"]}
       />
       <StatCard
         icon={<MaterialCommunityIcons name="trophy" size={32} color="#fff" />}
-        number="5"
+        number={Array.isArray(stats?.achievements) ? stats.achievements.length : 0}
         label="Achievements"
         gradientColors={["#4ECDC4", "#44A08D"]}
       />
       <StatCard
         icon={<Ionicons name="time" size={32} color="#fff" />}
-        number="0"
+        number={Number(stats?.todayMinutes || 0)}
         label="Mins Today"
         gradientColors={["#5DADE2", "#3498DB"]}
       />

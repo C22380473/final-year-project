@@ -22,11 +22,23 @@ import { CommunityRoutineCard } from "../components/CommunityRoutineCard";
 import { useRoutineComments } from "../hooks/useRoutineComments";
 import { normalizeTag } from "../utils/tagUtils";
 
-function RoutineCardRow({ routine, navigation, onSaveRoutine, onViewDetails,  onRefreshRoutines}) {
+function RoutineCardRow({
+  routine,
+  navigation,
+  onSaveRoutine,
+  onViewDetails,
+  onRefreshRoutines,
+}) {
   const routineId = routine.routineId || routine.id;
 
-  const { comments, newComment, setNewComment, postComment, deleteComment, editComment } =
-    useRoutineComments(routineId);
+  const {
+    comments,
+    newComment,
+    setNewComment,
+    postComment,
+    deleteComment,
+    editComment,
+  } = useRoutineComments(routineId);
 
   const currentUserId = auth.currentUser?.uid || null;
   const isRoutineOwner = routine.userId === currentUserId;
@@ -54,7 +66,7 @@ function RoutineCardRow({ routine, navigation, onSaveRoutine, onViewDetails,  on
       },
       (err) => {
         console.log("RATING SNAPSHOT ERROR:", err?.code, err?.message);
-      }
+      },
     );
 
     return () => unsub();
@@ -75,7 +87,7 @@ function RoutineCardRow({ routine, navigation, onSaveRoutine, onViewDetails,  on
         Alert.alert("Error", "Could not save rating.");
       }
     },
-    [routineId, onRefreshRoutines]
+    [routineId, onRefreshRoutines],
   );
 
   const handleLikeComment = useCallback(
@@ -87,7 +99,7 @@ function RoutineCardRow({ routine, navigation, onSaveRoutine, onViewDetails,  on
         Alert.alert("Error", "Could not react to comment.");
       }
     },
-    [routineId]
+    [routineId],
   );
 
   const handleDislikeComment = useCallback(
@@ -99,7 +111,7 @@ function RoutineCardRow({ routine, navigation, onSaveRoutine, onViewDetails,  on
         Alert.alert("Error", "Could not react to comment.");
       }
     },
-    [routineId]
+    [routineId],
   );
 
   return (
@@ -108,22 +120,17 @@ function RoutineCardRow({ routine, navigation, onSaveRoutine, onViewDetails,  on
       onView={() => onViewDetails(routine)}
       onSave={() => onSaveRoutine(routineId)}
       onPressAuthor={(userId) => navigation.navigate("Profile", { userId })}
-
       comments={comments}
       newComment={newComment}
       onChangeComment={setNewComment}
       onPostComment={postComment}
-
       onLikeComment={handleLikeComment}
       onDislikeComment={handleDislikeComment}
-
       avgRating={Number(routine.avgRating || 0)}
       ratingCount={Number(routine.ratingCount || 0)}
-
       // ✅ FIX: pass actual user rating
       userRating={userRating}
       onRate={handleRate}
-
       currentUserId={currentUserId}
       isRoutineOwner={isRoutineOwner}
       onDeleteComment={deleteComment}
@@ -144,7 +151,10 @@ export default function CommunityTemplatesScreen({ navigation }) {
     setLoading(false);
 
     if (!res?.success) {
-      Alert.alert("Error", res?.message || "Failed to load community routines.");
+      Alert.alert(
+        "Error",
+        res?.message || "Failed to load community routines.",
+      );
       return;
     }
 
@@ -173,7 +183,6 @@ export default function CommunityTemplatesScreen({ navigation }) {
 
     return ["All", ...sortedTags.slice(0, 12)];
   }, [publicRoutines]);
-
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -219,7 +228,7 @@ export default function CommunityTemplatesScreen({ navigation }) {
         Alert.alert("Error", res?.message || "Could not save this routine.");
       }
     },
-    [navigation]
+    [navigation],
   );
 
   const handleViewDetails = useCallback((routine) => {
@@ -289,7 +298,10 @@ export default function CommunityTemplatesScreen({ navigation }) {
         {loading && <Text style={{ color: "#666" }}>Loading...</Text>}
 
         {filtered.map((routine) => (
-          <View key={routine.routineId || routine.id} style={{ marginBottom: 4 }}>
+          <View
+            key={routine.routineId || routine.id}
+            style={{ marginBottom: 4 }}
+          >
             <RoutineCardRow
               routine={routine}
               navigation={navigation}
@@ -313,6 +325,7 @@ export default function CommunityTemplatesScreen({ navigation }) {
           if (t === "Home") navigation.navigate("Home");
           if (t === "Create") navigation.navigate("CreateRoutine");
           if (t === "Community") navigation.navigate("Community");
+          if (t === "Tools") navigation.navigate("Tools");
           if (t === "Profile") navigation.navigate("Profile");
         }}
       />
