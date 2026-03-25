@@ -126,6 +126,67 @@ export async function updateWeeklyGoal(uid, weeklyGoalMinutes) {
   }
 }
 
+function normalizeStats(stats) {
+  const merged = { ...DEFAULT_STATS, ...stats };
+
+  const today = toDateKey(new Date());
+  const currentWeekKey = getWeekKey(new Date());
+
+  const normalizedTodayMinutes =
+    merged.lastPracticeDate === today ? Number(merged.todayMinutes || 0) : 0;
+
+  const normalizedWeeklyMinutes =
+    merged.weeklyMinutesWeekKey === currentWeekKey
+      ? Number(merged.weeklyMinutes || 0)
+      : 0;
+
+  const normalizedCurrentStreak = calculateStreakFromHistory(
+    merged.practiceHistory || {}
+  );
+
+  return {
+    ...merged,
+    todayMinutes: normalizedTodayMinutes,
+    weeklyMinutes: normalizedWeeklyMinutes,
+    currentStreak: normalizedCurrentStreak,
+  };
+}
+
+function calculateStreakFromHistory(practiceHistory = {}) {
+  const keys = Object.keys(practiceHistory)
+    .filter((key) => Number(practiceHistory[key] || 0) > 0)
+    .sort();
+
+  if (keys.length === 0) return 0;
+
+  const todayKey = toDateKey(new Date());
+  const yesterdayKey = getYesterdayDateKey(new Date());
+  const lastKey = keys[keys.length - 1];
+
+  // A current streak only counts if the most recent practice
+  // happened today or yesterday.
+  if (lastKey !== todayKey && lastKey !== yesterdayKey) {
+    return 0;
+  }
+
+  let streak = 1;
+
+  for (let i = keys.length - 1; i > 0; i -= 1) {
+    const current = new Date(`${keys[i]}T00:00:00`);
+    const previous = new Date(`${keys[i - 1]}T00:00:00`);
+
+    const diffDays = (current - previous) / (1000 * 60 * 60 * 24);
+
+    if (diffDays === 1) {
+      streak += 1;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}
+
 export async function ensureUserStats(uid) {
   if (!uid) {
     return { success: false, message: "Missing uid" };
@@ -142,16 +203,12 @@ export async function ensureUserStats(uid) {
       });
       return {
         success: true,
-        stats: DEFAULT_STATS,
+        stats: normalizeStats(DEFAULT_STATS),
       };
     }
-
     return {
       success: true,
-      stats: {
-        ...DEFAULT_STATS,
-        ...snap.data(),
-      },
+      stats: normalizeStats(snap.data()),
     };
   } catch (e) {
     console.log("ensureUserStats error", e);
@@ -179,16 +236,13 @@ export async function getUserStats(uid) {
 
       return {
         success: true,
-        stats: DEFAULT_STATS,
+        stats: normalizeStats(DEFAULT_STATS),
       };
     }
 
     return {
       success: true,
-      stats: {
-        ...DEFAULT_STATS,
-        ...snap.data(),
-      },
+      stats: normalizeStats(snap.data()),
     };
   } catch (e) {
     console.log("getUserStats error", e);
@@ -214,7 +268,6 @@ export async function recordCompletedSession({
   const xpFromSession = safeExercises * 10 + (safeMinutes > 0 ? 20 : 0);
 
   const today = toDateKey(new Date());
-  const yesterday = getYesterdayDateKey(new Date());
 
   try {
     const ref = getStatsRef(uid);
@@ -241,22 +294,15 @@ export async function recordCompletedSession({
             : safeMinutes,
       });
 
-      let nextStreak = current.currentStreak || 0;
+      const nextStreak = calculateStreakFromHistory(nextPracticeHistory);
+      const nextLongestStreak = Math.max(
+        Number(current.longestStreak || 0),
+        nextStreak
+      );
 
-      if (current.lastPracticeDate === today) {
-      nextStreak = current.currentStreak || 1;
-    } else if (current.lastPracticeDate === yesterday) {
-      nextStreak = (current.currentStreak || 0) + 1;
-    } else {
-      nextStreak = 1;
-    }
-
-    const nextXp = Number(current.xp || 0) + xpFromSession;
-    const nextLevel = calculateLevelFromXp(nextXp);
-    const nextLongestStreak = Math.max(
-      Number(current.longestStreak || 0),
-      nextStreak
-    );
+      const nextXp = Number(current.xp || 0) + xpFromSession;
+      const nextLevel = calculateLevelFromXp(nextXp);
+    
 
       const baseUpdated = {
         totalPracticeMinutes:

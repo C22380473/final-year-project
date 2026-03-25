@@ -366,3 +366,35 @@ Gamification:
 Documentation:
 - Continue updating and refining the project report.
 
+---
+### Week 8
+
+**Work Completed:**
+- Implemented comment text parsing to detect and filter inappropriate content.
+- Added search and filtering functionality to improve content and user navigation.
+
+**Meetings / Discussions:**
+- Discussed the structure and content of the final report, with a focus on what to include in the implementation chapter.
+- Explored gamification as a potential final feature, including its purpose and how it could enhance user engagement.
+
+**Plans for Next Week:**
+- Begin implementing gamification features.
+- Integrate a profanity list to strengthen content filtering within search and comments.
+- Update the Prompts appendix in the report.
+
+---
+### Week 9
+
+**Work Completed:**
+- Integrated a profanity list into the system and applied filtering within the comments hook to improve content moderation.
+- Implemented gamification features, enhancing user engagement and motivation within the application.
+- Developed a tools page to support additional functionality and improve overall usability.
+
+**Meetings / Discussions:**
+- Demonstrated a working prototype showcasing the latest implemented features.
+- Discussed the grading rubric and how the current project aligns with assessment criteria.
+- Agreed to schedule a follow-up meeting during the break to review progress and next steps.
+
+**Plans for Next Week:**
+- Begin unit testing across key features to ensure reliability and stability.
+- Continue updating and refining project documentation.

@@ -19,11 +19,11 @@ export const StatsRow = ({ stats }) => {
         gradientColors={["#4ECDC4", "#44A08D"]}
       />
       <StatCard
-        icon={<Ionicons name="time" size={32} color="#fff" />}
-        number={Number(stats?.todayMinutes || 0)}
-        label="Mins Today"
-        gradientColors={["#5DADE2", "#3498DB"]}
-      />
+      icon={<Ionicons name="time" size={32} color="#fff" />}
+      number={Number(stats?.weeklyMinutes || 0)}
+      label="Mins This Week"
+      gradientColors={["#5DADE2", "#3498DB"]}
+    />
     </View>
   );
 };
