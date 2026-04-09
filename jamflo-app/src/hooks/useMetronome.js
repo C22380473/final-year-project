@@ -5,6 +5,13 @@ import {
   useAudioPlayerStatus,
   setAudioModeAsync,
 } from "expo-audio";
+import {
+  clampBpm,
+  getBeatIntervalMs,
+  getBeatInBar,
+  adjustStartTimeForBpmChange,
+  getMissedTicks,
+} from "../utils/metronomeUtils";
 
 const MIN_BPM = 40;
 const MAX_BPM = 240;
@@ -140,9 +147,9 @@ export function useMetronome({
     const loop = () => {
       if (!enabledRef.current || !runningRef.current) return;
 
-      const bpmNow = clamp(Number(bpmRef.current) || 120, MIN_BPM, MAX_BPM);
+      const bpmNow = clampBpm(Number(bpmRef.current) || 120);
       const beatsNow = Math.max(1, Number(beatsRef.current) || 4);
-      const interval = 60000 / bpmNow;
+      const interval = getBeatIntervalMs(bpmNow);
 
       const t = nowMs();
 
@@ -155,19 +162,26 @@ export function useMetronome({
       // Preserve phase when BPM changes (prevents “stuck on beat 1”)
       const prevInterval = lastIntervalRef.current || interval;
       if (Math.abs(prevInterval - interval) > 0.001) {
-        const elapsed = t - startTimeRef.current;
-        const phase = ((elapsed % prevInterval) + prevInterval) % prevInterval; // 0..prevInterval
-        const phaseFrac = phase / prevInterval;
-
-        startTimeRef.current = t - (tickRef.current + phaseFrac) * interval;
+        startTimeRef.current = adjustStartTimeForBpmChange({
+          currentTime: t,
+          startTime: startTimeRef.current,
+          tick: tickRef.current,
+          prevInterval,
+          newInterval: interval,
+        });
         lastIntervalRef.current = interval;
       }
 
       let nextTime = startTimeRef.current + (tickRef.current + 1) * interval;
 
       // Drop missed ticks without repeating
-      if (t > nextTime + interval) {
-        const missed = Math.floor((t - nextTime) / interval);
+      const missed = getMissedTicks({
+        currentTime: t,
+        nextTime,
+        interval,
+      });
+
+      if (missed > 0) {
         tickRef.current += missed;
         nextTime = startTimeRef.current + (tickRef.current + 1) * interval;
       }
@@ -175,7 +189,7 @@ export function useMetronome({
       const timeUntil = nextTime - t;
 
       if (timeUntil <= 2) {
-        const beatInBar = tickRef.current % beatsNow;
+        const beatInBar = getBeatInBar(tickRef.current, beatsNow);
         const isAccent = beatInBar === 0;
 
         playClickRef.current(isAccent);

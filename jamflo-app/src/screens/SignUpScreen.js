@@ -123,29 +123,30 @@ export default function SignUpScreen({ navigation }) {
       />
 
       {/* Password Strength Indicator */}
-      {passwordStrength !== "" && (
-        <Text style={{
-          color:
-            passwordStrength === "Strong"
-              ? "lime"
-              : passwordStrength === "Medium"
-              ? "yellow"
-              : "orange",
-          marginTop: 4,
-          marginBottom: 4
-        }}>
-          Password Strength: {passwordStrength}
-        </Text>
-      )}
+      {password !== "" && (
+        <View style={styles.passwordFeedbackBox}>
+          <Text
+            style={[
+              styles.passwordStrengthText,
+              passwordStrength === "Strong"
+                ? styles.strongText
+                : passwordStrength === "Medium"
+                ? styles.mediumText
+                : styles.weakText,
+            ]}
+          >
+            Strength: {passwordStrength}
+          </Text>
 
-      {/* Password Requirements */}
-      {passwordRequirements.length > 0 && (
-        <View style={{ marginTop: 6 }}>
-          {passwordRequirements.map((req, index) => (
-            <Text key={index} style={{ color: "orange", fontSize: 13 }}>
-              • {req}
-            </Text>
-          ))}
+          {passwordRequirements.length > 0 && (
+            <View style={styles.requirementsList}>
+              {passwordRequirements.map((req, index) => (
+                <Text key={index} style={styles.requirementText}>
+                  • {req}
+                </Text>
+              ))}
+            </View>
+          )}
         </View>
       )}
 
@@ -163,17 +164,25 @@ export default function SignUpScreen({ navigation }) {
 
       {/* INLINE FORM FEEDBACK MESSAGE */}
       {formMessage && (
-        <Text
-          style={{
-            marginTop: 14,
-            textAlign: "center",
-            color: formMessage.type === "error" ? "#ff6363" : "lime",
-            fontSize: 14,
-            fontWeight: "600"
-          }}
+        <View
+          style={[
+            styles.formMessageBox,
+            formMessage.type === "error"
+              ? styles.errorMessageBox
+              : styles.successMessageBox,
+          ]}
         >
-          {formMessage.text}
-        </Text>
+          <Text
+            style={[
+              styles.formMessageText,
+              formMessage.type === "error"
+                ? styles.errorMessageText
+                : styles.successMessageText,
+            ]}
+          >
+            {formMessage.text}
+          </Text>
+        </View>
       )}
 
       <TouchableOpacity 
@@ -213,4 +222,74 @@ const styles = StyleSheet.create({
   },
 
   signUpBtnText: { fontWeight: '600', fontSize: 16 },
+  passwordFeedbackBox: {
+  marginTop: 8,
+  marginBottom: 12,
+  paddingVertical: 10,
+  paddingHorizontal: 12,
+  backgroundColor: 'rgba(255,255,255,0.08)',
+  borderRadius: 10,
+},
+
+passwordStrengthText: {
+  fontSize: 14,
+  fontWeight: '600',
+  marginBottom: 6,
+},
+
+strongText: {
+  color: '#7CFC98',
+},
+
+mediumText: {
+  color: '#FFD76A',
+},
+
+weakText: {
+  color: '#FFB86B',
+},
+
+requirementsList: {
+  gap: 4,
+},
+
+requirementText: {
+  fontSize: 13,
+  color: '#F3F3F3',
+  opacity: 0.9,
+  lineHeight: 18,
+},
+formMessageBox: {
+  marginTop: 16,
+  paddingVertical: 12,
+  paddingHorizontal: 14,
+  borderRadius: 10,
+},
+
+errorMessageBox: {
+  backgroundColor: 'rgba(255, 0, 0, 0.12)',
+  borderWidth: 1,
+  borderColor: 'rgba(146, 5, 5, 0.35)',
+},
+
+successMessageBox: {
+  backgroundColor: 'rgba(124, 252, 152, 0.12)',
+  borderWidth: 1,
+  borderColor: 'rgba(124, 252, 152, 0.35)',
+},
+
+formMessageText: {
+  textAlign: 'center',
+  fontSize: 14,
+  fontWeight: '600',
+  lineHeight: 20,
+},
+
+errorMessageText: {
+  color: '#FFD6D6',
+},
+
+successMessageText: {
+  color: '#D8FFE1',
+},
 });
