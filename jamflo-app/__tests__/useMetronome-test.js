@@ -8,10 +8,10 @@ import {
 
 
 describe("metronomeUtils", () => {
-  /** 
+  /**
    * 
-   clampBPM
-
+   * clampBPM 
+   * 
    **/
   test("clampBpm keeps returns same value when the bpm is valid ", () => {
     // Arrange
@@ -41,10 +41,10 @@ describe("metronomeUtils", () => {
   });
 
 
-  /** 
+  /**
    * 
-   getBeatIntervalMs
-   
+   * getBeatIntervalMs 
+   * 
    **/
   test("getBeatIntervalMs converts bpm to milliseconds", () => {
     // Arrange
@@ -55,16 +55,10 @@ describe("metronomeUtils", () => {
     expect(result).toBe(500)
   });
 
-  
 
-
-
-
-  /** 
-   * 
+  /*
    getBeatInBar
-   
-   **/
+  */
   test("getBeatInBar returns 1 for tick 5 in 4/4", () => {
     // Arrange
     // Act
@@ -74,7 +68,6 @@ describe("metronomeUtils", () => {
   });
 
   test("getBeatInBar wraps to 0 at the start of a new bar", () => {
-    // Arrange
     // Act
     const result = getBeatInBar(4, 4)
     // Assert
@@ -82,7 +75,11 @@ describe("metronomeUtils", () => {
   });
 
 
-
+   /**
+   * 
+   * adjustStartTimeForBpmChange 
+   * 
+   **/
 
   test("adjustStartTimeForBpmChange preserves phase", () => {
     // Arrange
@@ -93,16 +90,19 @@ describe("metronomeUtils", () => {
       prevInterval: 500,
       newInterval: 400,
     };
-
     // Act
     const result = adjustStartTimeForBpmChange(input);
-
     // Assert
       expect(typeof result).toBe("number");
       expect(result).not.toBe(0);
   });
 
 
+  /**
+   * 
+   * getMissedTicks 
+   * 
+   **/
 
   test("getMissedTicks returns how many ticks were missed", () => {
     // Arrange
