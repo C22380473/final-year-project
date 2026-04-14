@@ -1,6 +1,6 @@
-import { 
+import {
   calculateStreakFromHistory,
-  } from "../src/utils/userStatsUtils";
+} from "../src/utils/userStatsUtils";
 
 describe("calculateStreakFromHistory", () => {
   /**
@@ -32,8 +32,6 @@ describe("calculateStreakFromHistory", () => {
     "2026-04-08": 20,
     "2026-04-09": 30,
   };
-
-
     // Act
     const result = calculateStreakFromHistory(history);
     // Assert

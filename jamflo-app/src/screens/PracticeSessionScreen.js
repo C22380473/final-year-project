@@ -450,6 +450,7 @@ function PracticeSessionInner({ navigation, route, userId }) {
             setBeatsPerBar={setBeatsPerBar}
             currentBeat0={currentBeat0}
             isRunning={isRunning}
+            onStart={() => setIsRunning(true)}
             onStop={handleStop}
             metronomeEnabled={metronomeEnabled}
             setMetronomeEnabled={setMetronomeEnabled}

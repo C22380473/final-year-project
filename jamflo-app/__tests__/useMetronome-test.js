@@ -118,14 +118,15 @@ describe("metronomeUtils", () => {
   });
 
   test("getMissedTicks returns correct number when late", () => {
+  // Arrange
   const input = {
     currentTime: 2000,
     nextTime: 1000,
     interval: 500,
   };
-
+  // Act
   const result = getMissedTicks(input);
-
+ // Assert
   expect(result).toBe(2);
 });
 });
