@@ -87,7 +87,7 @@ function RoutineCardRow({
         Alert.alert("Error", "Could not save rating.");
       }
     },
-    [routineId, onRefreshRoutines],
+    [routineId, onRefreshRoutines, isRoutineOwner],
   );
 
   const handleLikeComment = useCallback(

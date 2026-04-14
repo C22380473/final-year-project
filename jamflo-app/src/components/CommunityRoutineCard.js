@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Image } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  Image,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export const CommunityRoutineCard = ({
@@ -23,8 +31,8 @@ export const CommunityRoutineCard = ({
   onDislikeComment,
 
   currentUserId,
-  onEditComment,     // (commentId, nextText) => Promise<void>
-  onDeleteComment,   // (commentId) => Promise<void>
+  onEditComment, // (commentId, nextText) => Promise<void>
+  onDeleteComment, // (commentId) => Promise<void>
 
   isRoutineOwner = false,
 }) => {
@@ -64,10 +72,15 @@ export const CommunityRoutineCard = ({
       <Text style={styles.title}>{routine.name}</Text>
 
       <View style={styles.inlineRow}>
-        <TouchableOpacity onPress={() => onPressAuthor?.(routine.authorId || routine.userId)}>
+        <TouchableOpacity
+          onPress={() => onPressAuthor?.(routine.authorId || routine.userId)}
+        >
           <View style={styles.inlineItem}>
             {routine.authorPhotoURL ? (
-              <Image source={{ uri: routine.authorPhotoURL }} style={styles.inlineAvatar} />
+              <Image
+                source={{ uri: routine.authorPhotoURL }}
+                style={styles.inlineAvatar}
+              />
             ) : (
               <View style={styles.inlineAvatarPlaceholder}>
                 <Ionicons name="person" size={12} color="#218ED5" />
@@ -79,7 +92,9 @@ export const CommunityRoutineCard = ({
 
         <View style={styles.inlineItem}>
           <Ionicons name="time-outline" size={16} color="#666" />
-          <Text style={styles.inlineText}>{routine.totalDuration || 0} mins</Text>
+          <Text style={styles.inlineText}>
+            {routine.totalDuration || 0} mins
+          </Text>
         </View>
 
         <View style={styles.inlineItem}>
@@ -116,11 +131,17 @@ export const CommunityRoutineCard = ({
       </View>
 
       <View style={styles.actionRow}>
-        <TouchableOpacity style={[styles.btnHalf, styles.btnLeft, styles.saveBtn]} onPress={onSave}>
+        <TouchableOpacity
+          style={[styles.btnHalf, styles.btnLeft, styles.saveBtn]}
+          onPress={onSave}
+        >
           <Text style={styles.saveBtnText}>Save a Copy</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.btnHalf, styles.btnRight, styles.viewDetailsBtn]} onPress={onView}>
+        <TouchableOpacity
+          style={[styles.btnHalf, styles.btnRight, styles.viewDetailsBtn]}
+          onPress={onView}
+        >
           <Text style={styles.viewDetailsBtnText}>View Details</Text>
         </TouchableOpacity>
       </View>
@@ -131,7 +152,11 @@ export const CommunityRoutineCard = ({
 
       <View style={styles.commentsBox}>
         {comments?.length ? (
-          <ScrollView style={styles.commentsScroll} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.commentsScroll}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
+          >
             {comments.slice(0, 6).map((c, idx) => {
               const id = c.commentId || c.id || `c-${idx}`;
               const isMine = currentUserId && c.authorId === currentUserId;
@@ -140,25 +165,34 @@ export const CommunityRoutineCard = ({
 
               return (
                 <View key={id} style={styles.commentItem}>
-                 <View style={styles.commentHeader}>
+                  <View style={styles.commentHeader}>
                     <TouchableOpacity
                       style={styles.commentAuthorWrap}
                       onPress={() => onPressAuthor?.(c.authorId)}
                       disabled={!c.authorId}
                     >
                       {c.authorPhotoURL ? (
-                        <Image source={{ uri: c.authorPhotoURL }} style={styles.commentAvatar} />
+                        <Image
+                          source={{ uri: c.authorPhotoURL }}
+                          style={styles.commentAvatar}
+                        />
                       ) : (
                         <View style={styles.commentAvatarPlaceholder}>
                           <Ionicons name="person" size={12} color="#218ED5" />
                         </View>
                       )}
                       <Text style={styles.commentAuthor}>
-                        {c.authorNameResolved || c.authorDisplayName || c.authorUsername || c.authorName || "User"}
+                        {c.authorNameResolved ||
+                          c.authorDisplayName ||
+                          c.authorUsername ||
+                          c.authorName ||
+                          "User"}
                       </Text>
                     </TouchableOpacity>
 
-                    {!!c.createdAtText && <Text style={styles.commentDate}>{c.createdAtText}</Text>}
+                    {!!c.createdAtText && (
+                      <Text style={styles.commentDate}>{c.createdAtText}</Text>
+                    )}
                   </View>
 
                   {!isEditing ? (
@@ -172,11 +206,17 @@ export const CommunityRoutineCard = ({
                         multiline
                       />
                       <View style={styles.editActionsRow}>
-                        <TouchableOpacity style={[styles.editBtn, styles.editCancel]} onPress={cancelEdit}>
+                        <TouchableOpacity
+                          style={[styles.editBtn, styles.editCancel]}
+                          onPress={cancelEdit}
+                        >
                           <Text style={styles.editCancelText}>Cancel</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={[styles.editBtn, styles.editSave]} onPress={saveEdit}>
+                        <TouchableOpacity
+                          style={[styles.editBtn, styles.editSave]}
+                          onPress={saveEdit}
+                        >
                           <Text style={styles.editSaveText}>Save</Text>
                         </TouchableOpacity>
                       </View>
@@ -184,26 +224,50 @@ export const CommunityRoutineCard = ({
                   )}
 
                   <View style={styles.commentFooter}>
-                    <TouchableOpacity style={styles.reactBtn} onPress={() => onLikeComment?.(id)}>
-                      <Ionicons name="thumbs-up-outline" size={16} color="#218ED5" />
-                      <Text style={styles.reactCount}>{Number(c.likeCount || 0)}</Text>
+                    <TouchableOpacity
+                      style={styles.reactBtn}
+                      onPress={() => onLikeComment?.(id)}
+                    >
+                      <Ionicons
+                        name="thumbs-up-outline"
+                        size={16}
+                        color="#218ED5"
+                      />
+                      <Text style={styles.reactCount}>
+                        {Number(c.likeCount || 0)}
+                      </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.reactBtn} onPress={() => onDislikeComment?.(id)}>
-                      <Ionicons name="thumbs-down-outline" size={16} color="#777" />
-                      <Text style={styles.reactCount}>{Number(c.dislikeCount || 0)}</Text>
+                    <TouchableOpacity
+                      style={styles.reactBtn}
+                      onPress={() => onDislikeComment?.(id)}
+                    >
+                      <Ionicons
+                        name="thumbs-down-outline"
+                        size={16}
+                        color="#777"
+                      />
+                      <Text style={styles.reactCount}>
+                        {Number(c.dislikeCount || 0)}
+                      </Text>
                     </TouchableOpacity>
 
                     {!isEditing && (isMine || canDelete) && (
                       <View style={styles.ownerBtns}>
                         {isMine && (
-                          <TouchableOpacity onPress={() => startEdit(c)} style={styles.ownerBtn}>
+                          <TouchableOpacity
+                            onPress={() => startEdit(c)}
+                            style={styles.ownerBtn}
+                          >
                             <Text style={styles.ownerBtnTextBlue}>Edit</Text>
                           </TouchableOpacity>
                         )}
 
                         {canDelete && (
-                          <TouchableOpacity onPress={() => onDeleteComment?.(id)} style={styles.ownerBtn}>
+                          <TouchableOpacity
+                            onPress={() => onDeleteComment?.(id)}
+                            style={styles.ownerBtn}
+                          >
                             <Text style={styles.ownerBtnTextRed}>Delete</Text>
                           </TouchableOpacity>
                         )}
@@ -232,20 +296,30 @@ export const CommunityRoutineCard = ({
 
       <View style={[styles.divider, { marginTop: 16 }]} />
 
-      {typeof onRate === "function" && (
-      <View style={styles.ratingRow}>
-        <Text style={styles.rateLabel}>Rate:</Text>
-        {[1, 2, 3, 4, 5].map((n) => (
-          <TouchableOpacity key={n} onPress={() => onRate?.(n)} style={styles.starBtn}>
-            <Ionicons
-              name={n <= (userRating || 0) ? "star" : "star-outline"}
-              size={22}
-              color="#FFC107"
-            />
-          </TouchableOpacity>
+      {typeof onRate === "function" &&
+        (isRoutineOwner ? (
+          <View style={styles.ratingRow}>
+            <Text style={styles.ownerRatingNote}>
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.ratingRow}>
+            <Text style={styles.rateLabel}>Rate:</Text>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <TouchableOpacity
+                key={n}
+                onPress={() => onRate?.(n)}
+                style={styles.starBtn}
+              >
+                <Ionicons
+                  name={n <= (userRating || 0) ? "star" : "star-outline"}
+                  size={22}
+                  color="#FFC107"
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
         ))}
-      </View>
-      )}
     </View>
   );
 };
@@ -272,7 +346,12 @@ const styles = StyleSheet.create({
   description: { marginTop: 6, fontSize: 14, color: "#666", lineHeight: 18 },
   divider: { height: 1, backgroundColor: "#F1F1F1", marginVertical: 12 },
 
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#111", marginBottom: 6 },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111",
+    marginBottom: 6,
+  },
 
   blocksList: { marginBottom: 4 },
   blockPill: {
@@ -284,12 +363,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 6,
   },
-  blockDot: { width: 8, height: 8, borderRadius: 99, backgroundColor: "#218ED5", marginRight: 8 },
+  blockDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 99,
+    backgroundColor: "#218ED5",
+    marginRight: 8,
+  },
   blockText: { fontSize: 15, fontWeight: "600", color: "#222" },
   noBlocksText: { color: "#999" },
 
-  actionRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
-  btnHalf: { flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: "center", borderWidth: 1 },
+  actionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  btnHalf: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderWidth: 1,
+  },
   btnLeft: { marginRight: 8 },
   btnRight: { marginLeft: 8 },
 
@@ -328,13 +423,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EDEDED",
   },
-  commentHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
+  commentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
   commentAuthor: { fontSize: 14, fontWeight: "800", color: "#111" },
   commentDate: { fontSize: 12, color: "#777", fontWeight: "600" },
 
   commentText: { fontSize: 14, color: "#222", marginTop: 2 },
 
-  commentFooter: { marginTop: 8, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 10 },
+  commentFooter: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 10,
+  },
 
   reactBtn: {
     flexDirection: "row",
@@ -351,7 +456,12 @@ const styles = StyleSheet.create({
   ownerBtn: { paddingVertical: 4, paddingHorizontal: 6 },
   ownerBtnTextBlue: { color: "#1197E6", fontWeight: "800" },
   ownerBtnTextRed: { color: "#D11A2A", fontWeight: "800" },
-
+  ownerRatingNote: {
+  fontSize: 13,
+  color: "#777",
+  fontWeight: "600",
+  fontStyle: "italic",
+  },
   editInput: {
     backgroundColor: "#F7F7F7",
     borderRadius: 10,
@@ -360,7 +470,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     minHeight: 44,
   },
-  editActionsRow: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 8 },
+  editActionsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+    marginTop: 8,
+  },
   editBtn: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10 },
   editCancel: { backgroundColor: "#EDEDED" },
   editSave: { backgroundColor: "#1197E6" },
@@ -372,45 +487,45 @@ const styles = StyleSheet.create({
   starBtn: { paddingHorizontal: 1 },
 
   inlineAvatar: {
-  width: 22,
-  height: 22,
-  borderRadius: 999,
-  marginRight: 6,
-  backgroundColor: "#ddd",
-},
+    width: 22,
+    height: 22,
+    borderRadius: 999,
+    marginRight: 6,
+    backgroundColor: "#ddd",
+  },
 
-inlineAvatarPlaceholder: {
-  width: 22,
-  height: 22,
-  borderRadius: 999,
-  marginRight: 6,
-  backgroundColor: "#EAF4FB",
-  alignItems: "center",
-  justifyContent: "center",
-},
+  inlineAvatarPlaceholder: {
+    width: 22,
+    height: 22,
+    borderRadius: 999,
+    marginRight: 6,
+    backgroundColor: "#EAF4FB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-commentAuthorWrap: {
-  flexDirection: "row",
-  alignItems: "center",
-  flex: 1,
-  marginRight: 8,
-},
+  commentAuthorWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 8,
+  },
 
-commentAvatar: {
-  width: 24,
-  height: 24,
-  borderRadius: 999,
-  marginRight: 8,
-  backgroundColor: "#ddd",
-},
+  commentAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 999,
+    marginRight: 8,
+    backgroundColor: "#ddd",
+  },
 
-commentAvatarPlaceholder: {
-  width: 24,
-  height: 24,
-  borderRadius: 999,
-  marginRight: 8,
-  backgroundColor: "#EAF4FB",
-  alignItems: "center",
-  justifyContent: "center",
-},
+  commentAvatarPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 999,
+    marginRight: 8,
+    backgroundColor: "#EAF4FB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
