@@ -398,3 +398,19 @@ Documentation:
 **Plans for Next Week:**
 - Begin unit testing across key features to ensure reliability and stability.
 - Continue updating and refining project documentation.
+
+---
+
+### Week 10
+
+**Work Completed:**
+- Conducted system and unit testing
+- Completed final report draft and slides
+
+**Meetings / Discussions:**
+- Discussed the improvements for report
+- Explored expectations of demo and planned outline
+
+**Plans for Next Week:**
+- Finalise project code and prepare for demonstration
+- Polish and refine project report before submission

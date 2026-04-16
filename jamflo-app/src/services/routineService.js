@@ -485,7 +485,6 @@ export async function rateRoutine({ routineId, value }) {
       ratingSum: nextSum,
       ratingCount: nextCount,
       avgRating: nextAvg,
-      updatedAt: serverTimestamp(),
     });
   });
 }
