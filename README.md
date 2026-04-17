@@ -1,11 +1,11 @@
 # Final Year Project – JamFlo
-This repository contains the source code and suporting docs for my final year project app called JamFlo.
+This repository contains the source code and supporting docs for my final year project app called JamFlo.
 
 <img src="./jamflo-app/assets/jamflo-app.jpg" alt="JamFlo App" width="1800"/>
 
 ## About the Project
 
-JamFlo is a cross platform guitar pactice routine management and sharing platform built to help musicians:
+JamFlo is a cross platform guitar practice routine management and sharing platform built to help musicians:
 - structure goal-focused practice sessions
 - track their progress
 - stay motivated through gamification and interactive practice tools
