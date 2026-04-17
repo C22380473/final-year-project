@@ -97,7 +97,7 @@ function PracticeSessionInner({ navigation, route, userId }) {
     isRunning, // metronome follows the play/pause button
     volume: 1.0,
     onBeat: (beatIdx0) => setCurrentBeat0(beatIdx0),
-    debug: true,
+    debug: false,
   });
 
   const handleStop = useCallback(() => {

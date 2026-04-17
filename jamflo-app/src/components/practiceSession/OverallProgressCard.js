@@ -7,8 +7,8 @@ export function OverallProgressCard({ progress, rightText }) {
     <View style={commonStyles.card}>
       <View style={styles.cardRow}>
         <Text style={styles.cardTitle}>Overall Progress</Text>
-        <Text style={styles.cardMeta}>{rightText}</Text>
       </View>
+       <Text style={styles.cardMeta}>{rightText}</Text>
 
       <View style={commonStyles.progressTrack}>
         <View
@@ -23,7 +23,7 @@ export function OverallProgressCard({ progress, rightText }) {
 }
 
 const styles = StyleSheet.create({
-  cardRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  cardRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
   cardTitle: { fontSize: 16, fontWeight: "800", color: "#0f172a" },
   cardMeta: { fontSize: 13, fontWeight: "800", color: "#0f172a" },
 });

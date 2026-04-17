@@ -1,6 +1,7 @@
 # Final Year Project – JamFlo
-
 This repository contains the source code and suporting docs for my final year project app called JamFlo.
+
+<img src="./jamflo-app/assets/jamflo-app.jpg" alt="JamFlo App" width="1800"/>
 
 ## About the Project
 
