@@ -60,7 +60,7 @@ export function useRoutineComments(routineId) {
         snap.docs.map(async (d) => {
           const data = d.data();
           let authorNameResolved = data.authorName || "User";
-          let authorPhotoResolved = data.authorPhotoURL || "";
+          let authorPhotoResolved = "";
 
           if (data.authorId) {
             try {
