@@ -3,6 +3,9 @@ This repository contains the source code and supporting docs for my final year p
 
 <img src="./jamflo-app/assets/jamflo-app.jpg" alt="JamFlo App" width="1800"/>
 
+## Demo
+https://github.com/user-attachments/assets/b8c8d5aa-0031-423b-9fa4-901d743f6904
+
 ## About the Project
 
 JamFlo is a cross platform guitar practice routine management and sharing platform built to help musicians:
